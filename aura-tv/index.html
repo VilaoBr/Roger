@@ -122,6 +122,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0e10;color:#e8eae
 #aiBox{position:absolute;right:40px;bottom:30px;width:620px;max-height:200px;overflow:hidden;background:rgba(32,33,36,.97);border:1px solid #3c4043;border-radius:20px;padding:14px 20px;font-size:16px;line-height:1.4;display:none;z-index:15;box-shadow:0 14px 40px rgba(0,0,0,.6)}
 #aiBox b{color:#8ab4f8}
 #toast{position:absolute;top:96px;left:50%;transform:translateX(-50%);background:#e8eaed;color:#1f1f1f;padding:9px 20px;border-radius:24px;font-size:16px;display:none;z-index:30}
+#rdBody .rdOn{color:#fff;background:rgba(138,180,248,.12);border-left:4px solid #8ab4f8;padding-left:14px;margin-left:-18px;border-radius:4px;transition:background .3s}
 </style>
 </head>
 <body>
@@ -568,7 +569,7 @@ function activate(e){
   else if (a === 'cat') { gridCat = e.getAttribute('data-cat'); setTab('apps'); cur = null; setFocus(document.querySelector('#grid .nav') || document.querySelector('#chips .nav')); }
   else if (a === 'chip') { gridCat = e.getAttribute('data-cat'); renderGrid(); cur = null; setFocus(document.querySelector('#chips [data-cat="' + gridCat + '"]')); }
   else if (a === 'news') { var n = S.news[+e.getAttribute('data-i')]; if (n) openReader(n); }
-  else if (a === 'rdspeak') { speak($('rdTitle').textContent + '. ' + $('rdBody').innerText.slice(0, 3500)); }
+  else if (a === 'rdspeak') { if (rdReading) stopReading(); else readArticle(); }
   else if (a === 'rdclose') closeReader();
   else if (a === 'brief') brief();
   else if (a === 'ask') ask();
@@ -619,7 +620,9 @@ function extract(html, base){
   if (!best || bs < 300) best = doc.body;
   var ps = [], seen = {};
   [].forEach.call(best ? best.querySelectorAll('p, h2, h3, li') : [], function(p){ var t = p.textContent.replace(/\s+/g, ' ').trim();
-    if (t.length < (p.tagName === 'P' ? 45 : 25) || seen[t] || /cookies|newsletter|assine|inscreva|todos os direitos|publicidade|leia também|whatsapp/i.test(t)) return; seen[t] = 1; ps.push({ h:p.tagName !== 'P' && p.tagName !== 'LI', t:t }); });
+    var lk = p.querySelector('a'); if (p.tagName !== 'P' && lk && lk.textContent.replace(/\s+/g, ' ').trim().length > t.length * 0.7) return;
+    if (/^\W*veja\b/i.test(t) && t.length < 120) return;
+    if (t.length < (p.tagName === 'P' ? 45 : 25) || seen[t] || /cookies|newsletter|assine|inscreva|todos os direitos|publicidade|leia também|whatsapp|veja mais notícias|^vídeos?:/i.test(t) || (t.length < 240 && /(—|-|\|)\s*fotos?:|^fotos?:|reprodução\/|divulgação$/i.test(t))) return; seen[t] = 1; ps.push({ h:p.tagName !== 'P' && p.tagName !== 'LI', t:t }); });
   return { img:ogImage(html, base), ps:ps.slice(0, 60) };
 }
 function openReader(n){
@@ -627,6 +630,7 @@ function openReader(n){
   $('rdBody').innerHTML = '<p style="color:#9aa0a6">Carregando a notícia…</p>'; rdY = 0; $('rdScroll').style.transform = 'translateY(0)';
   var im = $('rdImg'); if (n.img) { im.style.backgroundImage = "url('" + n.img + "')"; im.style.display = 'block'; } else im.style.display = 'none';
   $('reader').style.display = 'block'; cur = null; setFocus(document.querySelector('#reader [data-act=rdspeak]'));
+  var my = ++rdSeq; rdReading = false; rdBtn();
   var go = n.html ? Promise.resolve(n.html) : (n.link ? GET(n.link) : Promise.resolve(''));
   go.then(function(h){
     var r = h ? extract(h, n.link) : { ps:[] };
@@ -634,9 +638,30 @@ function openReader(n){
     var out = '';
     r.ps.forEach(function(p){ out += p.h ? '<h3 style="font-size:24px;margin:18px 0 8px">' + esc(p.t) + '</h3>' : '<p style="margin:0 0 16px">' + esc(p.t) + '</p>'; });
     $('rdBody').innerHTML = out || '<p>' + esc(n.d || 'Não consegui abrir o texto completo desta notícia.') + '</p>';
+    if (my === rdSeq && $('reader').style.display === 'block') readArticle();
   });
 }
-function closeReader(){ $('reader').style.display = 'none'; if (A.stopSpeaking) A.stopSpeaking(); cur = null; setFocus(rdFrom && document.body.contains(rdFrom) ? rdFrom : document.querySelector('#newsStrip .nav')); }
+/* ======= leitura em voz alta da notícia inteira ======= */
+var rdReading = false, rdMap = [], rdSeq = 0;
+function rdBtn(){ var b = document.querySelector('#reader [data-act=rdspeak]'); if (b) b.textContent = rdReading ? '⏸ Parar leitura' : '🔊 Ouvir notícia'; }
+function readArticle(){
+  var ps = [].slice.call($('rdBody').querySelectorAll('p, h3')), chunks = [], map = [], txt = $('rdTitle').textContent.trim().replace(/[.!?]?$/, '.'), start = -1, lim = 380;
+  ps.forEach(function(p, i){ var t = p.textContent.replace(/\s+/g, ' ').trim(); if (!t || /^Carregando/.test(t)) return; if (p.tagName === 'H3') t = t.replace(/[.!?:]?$/, '.');
+    if (txt && (txt + ' ' + t).length > lim) { chunks.push(txt); map.push(start < 0 ? i : start); txt = t; start = i; lim = 1100; }
+    else { txt = txt ? txt + ' ' + t : t; if (start < 0) start = i; } });
+  if (txt) { chunks.push(txt); map.push(start < 0 ? 0 : start); }
+  rdMap = map; rdReading = true; rdBtn();
+  if (A.readChunks) A.readChunks(JSON.stringify(chunks)); else speak(chunks.join(' ').slice(0, 3800));
+}
+function stopReading(){ rdReading = false; rdBtn(); [].forEach.call($('rdBody').querySelectorAll('.rdOn'), function(x){ x.classList.remove('rdOn'); }); if (A.stopSpeaking) A.stopSpeaking(); }
+window.onReadChunk = function(i){
+  if (!rdReading || $('reader').style.display !== 'block') return;
+  var ps = $('rdBody').querySelectorAll('p, h3'), a = rdMap[i] || 0, b = i + 1 < rdMap.length ? rdMap[i + 1] : ps.length;
+  [].forEach.call(ps, function(p, k){ p.classList.toggle('rdOn', k >= a && k < b); });
+  var el = ps[a]; if (el && i > 0) { var max = Math.max(0, $('rdScroll').offsetHeight - 720); rdY = Math.max(0, Math.min(max, el.offsetTop - 140)); $('rdScroll').style.transform = 'translateY(' + (-rdY) + 'px)'; }
+};
+window.onReadDone = function(){ rdReading = false; rdBtn(); [].forEach.call($('rdBody').querySelectorAll('.rdOn'), function(x){ x.classList.remove('rdOn'); }); };
+function closeReader(){ $('reader').style.display = 'none'; rdSeq++; rdReading = false; rdBtn(); if (A.stopSpeaking) A.stopSpeaking(); cur = null; setFocus(rdFrom && document.body.contains(rdFrom) ? rdFrom : document.querySelector('#newsStrip .nav')); }
 function readerScroll(dir){ var max = Math.max(0, $('rdScroll').offsetHeight - 720); rdY = Math.max(0, Math.min(max, rdY + dir * 260)); $('rdScroll').style.transform = 'translateY(' + (-rdY) + 'px)'; }
 
 /* ======= encaixe na tela (automático + enquadramento) ======= */
