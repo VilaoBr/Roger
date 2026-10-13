@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Aura TV</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#0d0e10;color:#e8eaed;font-family:"Google Sans",Roboto,"Noto Sans",sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;overflow:hidden;transform-origin:0 0;background:linear-gradient(180deg,#1b1c20 0%,#111215 45%,#0d0e10 100%);border-radius:6px}
+/* ---------- topo ---------- */
+#top{position:absolute;left:0;right:0;top:0;height:84px;padding:22px 56px 0;display:flex;align-items:flex-start;justify-content:space-between;z-index:5}
+#tabs{display:flex;align-items:center;gap:6px}
+.logo{width:38px;height:38px;position:relative;margin-right:10px}
+.logo i{position:absolute;border-radius:50%}
+.logo i:nth-child(1){width:11px;height:11px;background:#4285f4;left:4px;top:8px}
+.logo i:nth-child(2){width:9px;height:9px;background:#ea4335;left:17px;top:3px}
+.logo i:nth-child(3){width:9px;height:9px;background:#fbbc05;left:19px;top:17px}
+.logo i:nth-child(4){width:6px;height:6px;background:#34a853;left:9px;top:24px}
+.tab{font-size:21px;color:#c4c7cc;padding:8px 18px;border-radius:26px;border:2px solid transparent;white-space:nowrap}
+.tab.on{background:#e8eaed;color:#1f1f1f}
+.tab.gem{background:rgba(232,234,237,.14);color:#fff}
+.tab.gem.on{background:#e8eaed;color:#1f1f1f}
+#who{text-align:right}
+#cityTime{font-size:22px;color:#f1f3f4;white-space:nowrap}
+#meLine{font-size:16px;color:#9aa0a6;margin-top:4px;white-space:nowrap}
+#meLine b{color:#e8eaed;font-weight:500}
+#gear{display:inline-block;margin-left:10px;padding:2px 8px;border-radius:14px;border:2px solid transparent;font-size:15px}
+/* ---------- páginas ---------- */
+.page{position:absolute;left:0;right:0;top:84px;bottom:0;overflow:hidden;display:none}
+.page.show{display:block}
+.scroller{position:absolute;left:0;right:0;top:0;transition:transform .22s ease-out;will-change:transform}
+.ptitle{font-size:24px;color:#e8eaed;padding:0 56px 0;font-weight:400;display:none}
+.stitle{font-size:19px;color:#bdc1c6;padding:0 56px;margin:6px 0 4px;white-space:nowrap}
+.row{position:relative;height:auto;overflow:hidden;padding:6px 0 6px}
+.strip{display:flex;gap:16px;padding:0 56px;transition:transform .22s ease-out;will-change:transform}
+/* notícias */
+.ncard{flex:0 0 178px;height:186px;background:#26272b;border-radius:14px;padding:10px 10px 8px;border:3px solid transparent;overflow:hidden}
+.ncard .t{font-size:15.5px;line-height:1.22;height:38px;overflow:hidden;color:#f1f3f4}
+.ncard .im{width:100%;height:70px;border-radius:8px;margin:6px 0;background:#3a3b40 center/cover no-repeat}
+.ncard .d{font-size:11.5px;line-height:1.3;color:#bdc1c6;height:30px;overflow:hidden}
+.ncard .s{font-size:10.5px;color:#80868b;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcard{flex:0 0 250px;height:186px;background:#26272b;border-radius:14px;padding:10px 12px;border:3px solid transparent;overflow:hidden}
+.gcard .h{display:flex;justify-content:space-between;align-items:flex-start}
+.gcard .h div{font-size:12.5px;line-height:1.25;color:#e8eaed;text-transform:uppercase;font-weight:500}
+.gcard .big{font-size:40px;line-height:1}
+.gcard .li{display:flex;gap:9px;align-items:center;margin-top:5px;font-size:13px;line-height:1.15}
+.gcard .li em{font-style:normal;font-size:19px;width:24px;text-align:center}
+.gcard .li small{display:block;color:#9aa0a6;font-size:11.5px}
+#nrowWrap{display:flex;align-items:flex-start;gap:0}
+#nrowWrap .strip{padding-right:20px}
+.ncard .im.ph{display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#3a3f55,#2a2c36)}
+/* apps */
+.cat{flex:0 0 auto;width:86px;text-align:center;border:none}
+.cat .ic{width:76px;height:76px;border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:34px;border:3px solid transparent}
+.cat span{display:block;font-size:13px;color:#bdc1c6;margin-top:4px}
+.app{flex:0 0 auto;width:136px;height:76px;border-radius:12px;background:#2b2c31;overflow:hidden;display:flex;align-items:center;justify-content:center;border:3px solid transparent;position:relative}
+.app img.bn{width:100%;height:100%;object-fit:cover}
+.app img.ic{width:40px;height:40px;margin-top:-14px}
+.app .lb{position:absolute;left:4px;right:4px;bottom:4px;font-size:12px;text-align:center;color:#e8eaed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app.add{background:#2b2c31;color:#e8eaed;font-size:30px;width:76px}
+.appsrow .strip{align-items:flex-start;padding-top:4px}
+.appsrow .app{margin-top:4px}
+.gap{flex:0 0 14px}
+/* continue assistindo */
+.hcard{flex:0 0 200px;height:108px;border-radius:12px;background:#2a2b30 center/cover no-repeat;position:relative;overflow:hidden;border:3px solid transparent}
+.hcard .ov{position:absolute;left:0;right:0;bottom:0;padding:22px 8px 6px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:13px;line-height:1.2}
+.hcard .ov small{display:block;color:#bdc1c6;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcard .badge{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:6px;background:#fff;overflow:hidden}
+.hcard .badge img{width:100%;height:100%}
+.hcard.info{background:#26272b;display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;padding:10px;color:#bdc1c6;flex-basis:300px}
+/* foco */
+.focus{border-color:#fff!important;transform:scale(1.08);box-shadow:0 8px 24px rgba(0,0,0,.55);z-index:2}
+.tab.focus,#gear.focus{transform:none;box-shadow:none}
+.cat.focus{border:none!important;transform:none;box-shadow:none}
+.cat.focus .ic{border-color:#fff;transform:scale(1.08)}
+.cat.focus span{color:#fff}
+.ncard,.gcard,.app,.hcard,.cat .ic,.chip,.btn,.gtile{transition:transform .12s ease-out}
+/* página apps */
+.chips{display:flex;gap:10px;padding:8px 56px 4px}
+.chip{font-size:17px;padding:8px 18px;border-radius:22px;background:#2b2c31;color:#c4c7cc;border:2px solid transparent}
+.chip.on{background:#e8eaed;color:#1f1f1f}
+.grid{display:flex;flex-wrap:wrap;gap:18px 18px;padding:14px 56px}
+.gtile{width:150px;text-align:center;border:none}
+.gtile .box{width:150px;height:86px;border-radius:12px;background:#2b2c31;overflow:hidden;display:flex;align-items:center;justify-content:center;border:3px solid transparent;position:relative}
+.gtile .box img.bn{width:100%;height:100%;object-fit:cover}
+.gtile .box img.ic{width:54px;height:54px}
+.gtile .box{background:#2b2c31}
+.gtile span{display:block;font-size:13px;color:#bdc1c6;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtile.focus{border:none!important;transform:none;box-shadow:none}
+.gtile.focus .box{border-color:#fff;transform:scale(1.08)}
+.gtile.focus span{color:#fff}
+.star{position:absolute;top:4px;right:4px;background:#fbbc05;color:#1f1f1f;border-radius:50%;width:22px;height:22px;font-size:13px;line-height:22px;text-align:center}
+.hint{font-size:15px;color:#9aa0a6;padding:2px 56px}
+/* biblioteca */
+.toggles{display:flex;flex-wrap:wrap;gap:10px;padding:6px 56px}
+.chip img{width:20px;height:20px;vertical-align:-4px;margin-right:6px;border-radius:4px}
+/* gemini */
+.gemwrap{display:flex;gap:22px;padding:10px 56px}
+.gemL{flex:1}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{font-size:18px;padding:12px 22px;border-radius:28px;background:#2b2c31;color:#e8eaed;border:2px solid transparent}
+.btn.pri{background:linear-gradient(90deg,#4285f4,#9b72cb,#d96570);color:#fff}
+#chat{margin-top:16px;height:400px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:10px}
+.msg{max-width:88%;font-size:18px;line-height:1.4;padding:12px 16px;border-radius:16px;background:#26272b}
+.msg.me{align-self:flex-end;background:#3c4043}
+.msg.ai b{background:linear-gradient(90deg,#4285f4,#d96570);-webkit-background-clip:text;color:transparent}
+.gemR{width:330px;background:#26272b;border-radius:16px;padding:16px 18px}
+.gemR h4{font-size:15px;color:#9aa0a6;font-weight:500;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.fday{display:flex;justify-content:space-between;align-items:center;font-size:17px;padding:7px 0;border-bottom:1px solid #333438}
+.fday:last-child{border:none}
+.fday .i{font-size:22px;width:34px;text-align:center}.fday .p{color:#8ab4f8;font-size:14px;width:52px;text-align:right}
+/* overlays */
+.overlay{position:absolute;inset:0;background:rgba(13,14,16,.98);display:none;z-index:20;padding:22px 120px}
+.overlay h2{font-size:30px;font-weight:400;margin-bottom:14px}
+.overlay label{display:block;margin:7px 0 3px;color:#bdc1c6;font-size:15px}
+.overlay input{width:100%;font-size:17px;padding:7px 12px;border-radius:10px;border:2px solid #3c4043;background:#1f2023;color:#fff;outline:none}
+.overlay input.focus{border-color:#fff;transform:none;box-shadow:none}
+.overlay .h2{font-size:13px;color:#80868b;margin-top:4px}
+.overlay .btns{margin-top:12px}
+#settings .btn{font-size:16px;padding:9px 18px}
+#aiBox{position:absolute;right:40px;bottom:30px;width:620px;max-height:200px;overflow:hidden;background:rgba(32,33,36,.97);border:1px solid #3c4043;border-radius:20px;padding:14px 20px;font-size:16px;line-height:1.4;display:none;z-index:15;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+#aiBox b{color:#8ab4f8}
+#toast{position:absolute;top:96px;left:50%;transform:translateX(-50%);background:#e8eaed;color:#1f1f1f;padding:9px 20px;border-radius:24px;font-size:16px;display:none;z-index:30}
+</style>
+</head>
+<body>
+<div id="stage">
+<div id="top">
+  <div id="tabs">
+    <div class="logo"><i></i><i></i><i></i><i></i></div>
+    <div class="tab nav" data-act="search" data-tab="search">Pesquisa</div>
+    <div class="tab nav on" data-act="tab" data-tab="home">Início</div>
+    <div class="tab nav" data-act="tab" data-tab="apps">Apps</div>
+    <div class="tab nav" data-act="tab" data-tab="lib">Biblioteca</div>
+    <div class="tab gem nav" data-act="tab" data-tab="gem">Gemini AI</div>
+  </div>
+  <div id="who">
+    <div id="cityTime">Localizando… | --:--</div>
+    <div id="meLine"><span id="meName"></span><span id="meWx"></span><span id="gear" class="nav" data-act="config">⚙</span></div>
+  </div>
+</div>
+
+<!-- INÍCIO -->
+<div class="page show" id="p-home"><div class="scroller" id="s-home">
+  <div class="ptitle">Gemini</div>
+  <div id="nrowWrap">
+    <div style="flex:1;min-width:0;overflow:hidden;margin-right:16px"><div class="stitle" id="newsTitle">Notícias e Destaques</div>
+      <div class="row" data-row="news"><div class="strip" id="newsStrip"></div></div></div>
+    <div style="flex:0 0 auto;padding-right:56px"><div class="stitle" style="padding:0">Gemini AI</div>
+      <div class="row" style="overflow:visible"><div class="gcard nav" id="gcard" data-act="brief"></div></div></div>
+  </div>
+  <div class="stitle">App Launcher</div>
+  <div class="row appsrow" data-row="apps"><div class="strip" id="appStrip"></div></div>
+  <div class="stitle" id="histTitle">Continue Assistindo</div>
+  <div class="row" data-row="hist"><div class="strip" id="histStrip"></div></div>
+  <div style="height:40px"></div>
+</div></div>
+
+<!-- APPS -->
+<div class="page" id="p-apps"><div class="scroller" id="s-apps">
+  <div class="chips" id="chips"></div>
+  <div class="hint">OK abre o app · segure OK para colocar ou tirar dos Favoritos (★ aparece no Início)</div>
+  <div class="grid" id="grid"></div>
+</div></div>
+
+<!-- BIBLIOTECA -->
+<div class="page" id="p-lib"><div class="scroller" id="s-lib">
+  <div class="stitle">Continue Assistindo · mostrar no Início</div>
+  <div class="hint">OK liga ou desliga cada app no histórico da tela inicial</div>
+  <div class="toggles" id="toggles"></div>
+  <div class="stitle">Histórico completo</div>
+  <div class="grid" id="histGrid"></div>
+  <div class="btns" style="padding:6px 56px 30px"><div class="btn nav" data-act="clearhist">🗑️ Limpar histórico</div></div>
+</div></div>
+
+<!-- GEMINI -->
+<div class="page" id="p-gem"><div class="scroller" id="s-gem">
+  <div class="gemwrap">
+    <div class="gemL">
+      <div class="btns">
+        <div class="btn pri nav" data-act="ask">🎙️ Perguntar ao Gemini</div>
+        <div class="btn nav" data-act="brief">🔊 Resumo do dia</div>
+        <div class="btn nav" data-act="assistant">Google Assistente</div>
+        <div class="btn nav" data-act="stop">⏹ Parar voz</div>
+      </div>
+      <div id="chat"></div>
+    </div>
+    <div class="gemR"><h4 id="fcTitle">Previsão</h4><div id="fc"></div></div>
+  </div>
+</div></div>
+
+<div id="settings" class="overlay">
+  <h2>Configurações da Aura</h2>
+  <label id="frameLbl">📐 Ajustar tela</label>
+  <div class="btns" style="margin-top:6px"><div class="btn pri nav" data-act="frm0">Tela cheia (automático)</div><div class="btn nav" data-act="frm+">➕ Afastar das bordas</div><div class="btn nav" data-act="frm-">➖ Aproximar das bordas</div></div>
+  <label>Seu nome</label><input id="cfgName" class="nav" data-act="input" placeholder="Roger">
+  <label>Sua cidade (topo: hora, clima e previsão). Vazio = detectar sozinho</label><input id="cfgCity" class="nav" data-act="input" placeholder="Ex.: Guaíra, SP">
+  <label>Cidade das notícias. Vazio = a sua cidade</label><input id="cfgNews" class="nav" data-act="input" placeholder="Ex.: Ribeirão Preto, SP">
+  <label>Chave do Gemini (grátis em aistudio.google.com/apikey)</label><input id="cfgKey" class="nav" data-act="input" placeholder="AIza…">
+  <label>Resumo falado ao ligar a TV (sim/não)</label><input id="cfgAuto" class="nav" data-act="input" placeholder="sim">
+  <label>Voz da Aura: Aoede (padrão), Kore, Callirrhoe, Leda ou sistema. As vozes naturais usam a chave do Gemini</label><input id="cfgVoice" class="nav" data-act="input" placeholder="Aoede">
+  <div class="btns" style="margin:6px 0 4px"><div class="btn nav" data-act="testvoice">🔊 Testar voz</div></div>
+  <label>Servidor de atualizações</label><input id="cfgUpd" class="nav" data-act="input" placeholder="https://…">
+  <div class="h2" id="verLbl"></div>
+  <div class="btns">
+    <div class="btn pri nav" data-act="save">Salvar</div>
+    <div class="btn nav" data-act="update">⬇️ Atualizar app</div>
+    <div class="btn nav" data-act="stockhome">🚪 Sair da Aura</div>
+    <div class="btn nav" data-act="sethome">🏠 Escolher tela inicial padrão</div>
+    <div class="btn nav" data-act="tvsettings">Ajustes da TV</div>
+    <div class="btn nav" data-act="close">Fechar</div>
+  </div>
+</div>
+<div id="homeAsk" class="overlay" style="background:rgba(13,14,16,.92);padding:0">
+  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#1f2025;border-radius:22px;padding:34px 44px;text-align:center;min-width:560px">
+    <div style="font-size:26px;margin-bottom:22px">Para onde você quer ir?</div>
+    <div class="btns" style="justify-content:center"><div class="btn pri nav" data-act="homeaura">✨ Ficar na Aura</div><div class="btn nav" data-act="stockhome">📺 Tela inicial padrão</div><div class="btn nav" data-act="sethome">⚙ Mudar o padrão</div></div>
+  </div>
+</div>
+<div id="aiBox"></div>
+<div id="reader" class="overlay" style="padding:0;background:#0d0e10">
+  <div id="rdScroll" style="position:absolute;left:0;right:0;top:0;transition:transform .18s ease-out">
+    <div style="padding:34px 150px 60px">
+      <div id="rdSrc" style="color:#8ab4f8;font-size:16px"></div>
+      <h1 id="rdTitle" style="font-size:34px;font-weight:500;line-height:1.25;margin:8px 0 16px"></h1>
+      <div class="btns" style="margin:0 0 18px"><div class="btn pri nav" data-act="rdspeak">🔊 Ouvir notícia</div><div class="btn nav" data-act="rdclose">Fechar</div></div>
+      <div id="rdImg" style="width:100%;height:380px;border-radius:14px;background:#26272b center/cover no-repeat;margin-bottom:20px;display:none"></div>
+      <div id="rdBody" style="font-size:22px;line-height:1.6;color:#e8eaed"></div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+</div>
+
+<script>
+"use strict";
+/* ======= ponte com o Android (com plano B para teste no navegador) ======= */
+var A = window.Aura || {};
+var CB = {}, cbN = 0;
+window.__cb = function(id, txt){ var f = CB[id]; delete CB[id]; if (f) f(txt); };
+function call(fnAsync, args, fnSync){
+  return new Promise(function(res){
+    if (A[fnAsync]) { var id = 'c' + (++cbN); CB[id] = res; A[fnAsync].apply(A, [id].concat(args)); }
+    else setTimeout(function(){ res(A[fnSync] ? A[fnSync].apply(A, args) : ''); }, 0);
+  });
+}
+function GET(u){ return call('fetchAsync', [u], 'fetch'); }
+function POST(u, b){ return call('postAsync', [u, b], 'post'); }
+function pref(k){ try { return A.getPref ? (A.getPref(k) || '') : ''; } catch(e){ return ''; } }
+function setPref(k, v){ if (A.setPref) A.setPref(k, v); }
+function J(s){ try { return JSON.parse(s); } catch(e){ return null; } }
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function toast(t){ var e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function(){ e.style.display = 'none'; }, 3000); }
+function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+var S = { me:{}, newsCity:{}, weather:null, news:[], apps:[], hist:[], tab:'home', chat:[] };
+
+var WMO = {0:['Céu limpo','☀️','🌙'],1:['Poucas nuvens','🌤️','🌙'],2:['Parcialmente nublado','⛅','☁️'],3:['Nublado','☁️','☁️'],45:['Neblina','🌫️','🌫️'],48:['Neblina','🌫️','🌫️'],
+51:['Garoa fraca','🌦️','🌧️'],53:['Garoa','🌦️','🌧️'],55:['Garoa forte','🌧️','🌧️'],61:['Chuva fraca','🌦️','🌧️'],63:['Chuva','🌧️','🌧️'],65:['Chuva forte','🌧️','🌧️'],
+66:['Chuva gelada','🌧️','🌧️'],67:['Chuva gelada','🌧️','🌧️'],71:['Neve','🌨️','🌨️'],73:['Neve','🌨️','🌨️'],75:['Neve','❄️','❄️'],80:['Pancadas de chuva','🌦️','🌧️'],
+81:['Pancadas de chuva','🌧️','🌧️'],82:['Temporal','⛈️','⛈️'],95:['Trovoadas','⛈️','⛈️'],96:['Trovoadas com granizo','⛈️','⛈️'],99:['Trovoadas com granizo','⛈️','⛈️']};
+function wmo(c, day){ var w = WMO[c] || ['—','🌡️','🌡️']; return { d:w[0], i: day === 0 ? w[2] : w[1] }; }
+
+/* ======= relógio + topo ======= */
+function placeName(p){ return p && p.city ? p.city + (p.uf ? ', ' + p.uf : '') : ''; }
+function tick(){
+  var d = new Date();
+  $('cityTime').textContent = (placeName(S.me) || 'Localizando…') + ' | ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function renderMe(){
+  $('meName').innerHTML = pref('name') ? '<b>' + esc(pref('name')) + '</b>' : '';
+  var w = S.weather;
+  if (w && w.current) {
+    var c = w.current, x = wmo(c.weather_code, c.is_day), dd = w.daily;
+    $('meWx').textContent = (pref('name') ? '  ·  ' : '') + x.i + ' ' + Math.round(c.temperature_2m) + '°  ·  máx ' + Math.round(dd.temperature_2m_max[0]) + '° mín ' + Math.round(dd.temperature_2m_min[0]) + '°  ·  ' +
+      (dd.time.length > 1 ? 'amanhã ' + wmo(dd.weather_code[1], 1).i + ' ' + Math.round(dd.temperature_2m_max[1]) + '°' : '');
+  }
+  tick();
+}
+setInterval(tick, 5000); tick();
+
+/* ======= localização ======= */
+var UFS = {'Acre':'AC','Alagoas':'AL','Amapá':'AP','Amazonas':'AM','Bahia':'BA','Ceará':'CE','Distrito Federal':'DF','Espírito Santo':'ES','Goiás':'GO','Maranhão':'MA','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Minas Gerais':'MG','Pará':'PA','Paraíba':'PB','Paraná':'PR','Pernambuco':'PE','Piauí':'PI','Rio de Janeiro':'RJ','Rio Grande do Norte':'RN','Rio Grande do Sul':'RS','Rondônia':'RO','Roraima':'RR','Santa Catarina':'SC','São Paulo':'SP','Sergipe':'SE','Tocantins':'TO','Sao Paulo':'SP'};
+function uf(r){ return UFS[r] || r || ''; }
+function geocode(name){
+  var parts = name.split(','), city = parts[0].trim(), st = (parts[1] || '').trim().toUpperCase();
+  return GET('https://geocoding-api.open-meteo.com/v1/search?count=10&language=pt&country=BR&name=' + encodeURIComponent(city)).then(function(t){
+    var g = J(t); if (!g || !g.results || !g.results.length) return null;
+    var r = g.results.filter(function(x){ return !st || uf(x.admin1) === st; })[0] || g.results[0];
+    return { city:r.name, uf:uf(r.admin1), lat:r.latitude, lon:r.longitude };
+  });
+}
+function reverseGeo(lat, lon){
+  return GET('https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=pt&latitude=' + lat + '&longitude=' + lon).then(function(t){
+    var j = J(t); if (!j) return null; var c = '';
+    try { j.localityInfo.administrative.forEach(function(x){ if (x.adminLevel === 8 && !c) c = x.name; }); } catch(e){}
+    if (!c) c = (j.city && !/^Região/.test(j.city)) ? j.city : j.locality; if (!c) return null;
+    var ufc = (j.principalSubdivisionCode || '').split('-')[1] || uf(j.principalSubdivision);
+    return { city:c, uf:ufc, lat:lat, lon:lon, src:'gps' };
+  });
+}
+function locateMe(){
+  if (pref('city')) return geocode(pref('city'));
+  var g = A.getLocation ? A.getLocation() : '';
+  if (g) { var q = g.split(','); return reverseGeo(+q[0], +q[1]).then(function(r){ return r || ipLocate(); }); }
+  return ipLocate();
+}
+window.onLocationReady = function(){ if (!pref('city')) refreshAll(); };
+function ipLocate(){
+  return GET('https://ipwho.is/?lang=pt-BR').then(function(t){
+    var j = J(t); if (j && j.success !== false && j.latitude) return { city:j.city, uf:j.region_code || uf(j.region), lat:j.latitude, lon:j.longitude };
+    return GET('https://get.geojs.io/v1/ip/geo.json').then(function(t2){ var k = J(t2); return k && k.latitude ? { city:k.city, uf:uf(k.region), lat:+k.latitude, lon:+k.longitude } : null; });
+  });
+}
+
+/* ======= clima (Open-Meteo, plano B wttr.in) ======= */
+function wwo2wmo(c){ c = +c; if (c === 113) return 0; if (c === 116) return 2; if (c === 119 || c === 122) return 3; if ([143,248,260].indexOf(c) >= 0) return 45;
+  if ([176,263,266,293,296].indexOf(c) >= 0) return 61; if ([299,302].indexOf(c) >= 0) return 63; if ([305,308].indexOf(c) >= 0) return 65; if (c === 353) return 80; if (c === 356) return 81; if (c === 359) return 82;
+  if ([200,386,389,392,395].indexOf(c) >= 0) return 95; if ([281,284,311,314].indexOf(c) >= 0) return 66; return 71; }
+function wttr(p){
+  return GET('https://wttr.in/' + p.lat + ',' + p.lon + '?format=j1&lang=pt').then(function(t){
+    var j = J(t); if (!j || !j.current_condition) return null;
+    var c = j.current_condition[0], h = new Date().getHours();
+    var w = { current:{ temperature_2m:+c.temp_C, apparent_temperature:+c.FeelsLikeC, relative_humidity_2m:+c.humidity, weather_code:wwo2wmo(c.weatherCode), is_day:(h >= 6 && h < 18) ? 1 : 0, wind_speed_10m:+c.windspeedKmph },
+      daily:{ time:[], weather_code:[], temperature_2m_max:[], temperature_2m_min:[], precipitation_probability_max:[] } };
+    j.weather.forEach(function(d){ var hr = d.hourly || [], mid = hr[Math.min(4, hr.length - 1)] || {}, p2 = 0; hr.forEach(function(x){ p2 = Math.max(p2, +x.chanceofrain || 0); });
+      w.daily.time.push(d.date); w.daily.weather_code.push(wwo2wmo(mid.weatherCode || 113)); w.daily.temperature_2m_max.push(+d.maxtempC); w.daily.temperature_2m_min.push(+d.mintempC); w.daily.precipitation_probability_max.push(p2); });
+    return w;
+  });
+}
+function loadWeather(p){
+  return GET('https://api.open-meteo.com/v1/forecast?latitude=' + p.lat + '&longitude=' + p.lon +
+    '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7')
+  .then(function(t){ var w = J(t); return (w && w.current) ? w : wttr(p); })
+  .then(function(w){ if (w) { S.weather = w; saveCache(); renderMe(); renderGemCard(); renderForecast(); } });
+}
+
+/* ======= notícias (Bing com foto, plano B Google Notícias) ======= */
+function txt(el, tag){ var e = el.getElementsByTagName(tag)[0]; return e ? e.textContent : ''; }
+function loadNews(){
+  var p = S.newsCity, q = p.city ? p.city + (p.uf ? ' ' + p.uf : '') : 'Brasil';
+  $('newsTitle').textContent = 'Notícias e Destaques de ' + (placeName(p) || 'Brasil');
+  return GET('https://www.bing.com/news/search?format=rss&setlang=pt-BR&cc=BR&q=' + encodeURIComponent(q)).then(function(x){
+    var items = [];
+    if (x) { var doc = new DOMParser().parseFromString(x, 'text/xml'), its = doc.getElementsByTagName('item');
+      for (var i = 0; i < its.length && items.length < 12; i++) { var img = txt(its[i], 'News:Image');
+        items.push({ t:txt(its[i], 'title'), d:txt(its[i], 'description'), s:txt(its[i], 'News:Source'), dt:txt(its[i], 'pubDate'), link:realLink(txt(its[i], 'link')), img: img ? img.replace(/^http:/, 'https:') + '&w=360&h=200&c=14' : '' }); } }
+    if (items.length) return items;
+    return GET('https://news.google.com/rss/search?hl=pt-BR&gl=BR&ceid=BR:pt-419&q=' + encodeURIComponent('"' + (p.city || 'Brasil') + '" when:3d')).then(function(y){
+      var out = []; if (!y) return out; var doc = new DOMParser().parseFromString(y, 'text/xml'), its = doc.getElementsByTagName('item');
+      for (var i = 0; i < its.length && out.length < 12; i++) { var t = txt(its[i], 'title'), s = txt(its[i], 'source'); if (s && t.lastIndexOf(' - ' + s) > 0) t = t.substring(0, t.lastIndexOf(' - ' + s)); out.push({ t:t, d:'', s:s, dt:txt(its[i], 'pubDate'), link:txt(its[i], 'link'), img:'' }); }
+      return out;
+    });
+  }).then(function(items){ if (items.length || !S.news.length) { S.news = items; saveCache(); } renderNews(); fillImages(); });
+}
+function realLink(l){ var m = /[?&]url=([^&]+)/.exec(l || ''); try { return m ? decodeURIComponent(m[1]) : l; } catch(e){ return l; } }
+function absUrl(u, base){ try { return new URL(u, base).href.replace(/^http:/, 'https:'); } catch(e){ return ''; } }
+function ogImage(html, base){ var m = /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)(?::src)?["'][^>]*content=["']([^"']+)/i.exec(html) || /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)/i.exec(html); return m ? absUrl(m[1].replace(/&amp;/g, '&'), base) : ''; }
+var imgBusy = false;
+function fillImages(){
+  if (imgBusy) return; var list = S.news.slice(0, 8).filter(function(n){ return !n.img && n.link && !n.noimg; }); if (!list.length) return; imgBusy = true;
+  (function next(i){ if (i >= list.length) { imgBusy = false; saveCache(); return; } var n = list[i];
+    GET(n.link).then(function(h){ var im = h ? ogImage(h, n.link) : ''; if (im) { n.img = im; n.html = h.length < 900000 ? h : ''; renderNews(); } else n.noimg = 1; next(i + 1); }); })(0);
+}
+function ago(dt){ if (!dt) return ''; var m = Math.round((Date.now() - new Date(dt)) / 60000); if (isNaN(m)) return ''; return m < 60 ? 'há ' + Math.max(1, m) + ' min' : m < 1440 ? 'há ' + Math.round(m / 60) + ' h' : 'há ' + Math.round(m / 1440) + ' d'; }
+function renderNews(){
+  var h = '';
+  S.news.slice(0, 8).forEach(function(n, i){
+    h += '<div class="ncard nav" data-act="news" data-i="' + i + '"><div class="t">' + esc(n.t) + '</div>' + (n.img ? '<div class="im" style="background-image:url(\'' + esc(n.img) + '\')"></div>' : '<div class="im ph">📰</div>') + '<div class="d">' + esc(n.d || n.t) + '</div><div class="s">' + esc(n.s) + ' · ' + ago(n.dt) + '</div></div>';
+  });
+  if (!S.news.length) h = '<div class="ncard"><div class="t">Carregando notícias…</div></div>';
+  $('newsStrip').innerHTML = h; renderGemCard(); refocus();
+}
+function renderGemCard(){
+  var g = $('gcard'); if (!g) return; var w = S.weather, me = placeName(S.me);
+  var h = '<div class="h"><div>Gemini AI<br>' + esc(me || '') + '</div><div class="big">' + (w && w.current ? wmo(w.current.weather_code, w.current.is_day).i : '⏳') + '</div></div>';
+  if (w && w.current) {
+    var c = w.current, dd = w.daily;
+    h += '<div class="li"><em>🌡️</em><div>' + Math.round(c.temperature_2m) + '° agora · ' + esc(wmo(c.weather_code, 1).d) + '<small>Sensação ' + Math.round(c.apparent_temperature) + '° · umidade ' + c.relative_humidity_2m + '%</small></div></div>';
+    for (var i = 0; i < 2 && i < dd.time.length; i++) h += '<div class="li"><em>' + wmo(dd.weather_code[i], 1).i + '</em><div>' + (i ? 'Amanhã' : 'Hoje') + ' · ' + Math.round(dd.temperature_2m_max[i]) + '° / ' + Math.round(dd.temperature_2m_min[i]) + '°<small>Chuva ' + (dd.precipitation_probability_max[i] == null ? '-' : dd.precipitation_probability_max[i]) + '% · ' + esc(wmo(dd.weather_code[i], 1).d) + '</small></div></div>';
+  }
+  h += '<div class="li"><em>🔊</em><div>Ouvir resumo do dia<small>OK para o Gemini falar</small></div></div>';
+  g.innerHTML = h;
+}
+function renderForecast(){
+  var w = S.weather; if (!w) return; var dd = w.daily, h = '';
+  $('fcTitle').textContent = 'Previsão · ' + placeName(S.me);
+  for (var i = 0; i < dd.time.length && i < 7; i++) { var dt = new Date(dd.time[i] + 'T12:00:00');
+    var nm = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : dt.toLocaleDateString('pt-BR', { weekday:'short' }).replace('.', '');
+    h += '<div class="fday"><span style="width:80px;text-transform:capitalize">' + nm + '</span><span class="i">' + wmo(dd.weather_code[i], 1).i + '</span><span class="p">💧' + (dd.precipitation_probability_max[i] == null ? '-' : dd.precipitation_probability_max[i]) + '%</span><span>' + Math.round(dd.temperature_2m_max[i]) + '° / ' + Math.round(dd.temperature_2m_min[i]) + '°</span></div>'; }
+  $('fc').innerHTML = h;
+}
+
+/* ======= apps ======= */
+var CATS = [{ k:'fav', n:'Favoritos', i:'★', c:'#3c4043' }, { k:'media', n:'Mídia', i:'▶', c:'#a142f4' }, { k:'game', n:'Jogos', i:'🎮', c:'#34a853' }, { k:'tools', n:'Ferramentas', i:'🛠', c:'#1a73e8' }];
+var MEDIA = /youtube|netflix|globo|prime|amazon|disney|max|hbo|spotify|deezer|pluto|tubi|twitch|crunchy|kodi|vlc|unitv|uni\.tv|iptv|paramount|star|apple|plex|stremio|music|video|tv\b|player|smarters|xciptv|moru|lionsgate|mubi/i;
+function catOf(a){ var l = a.label + ' ' + a.pkg; if (a.cat === 'game') return 'game'; if (/settings|config|ajuste|file|arquivo|store|loja|vending|browser|navegador|downloader|cleaner|send ?files|launcher|teclado|keyboard/i.test(l)) return 'tools'; if (a.cat === 'media' || MEDIA.test(l)) return 'media'; return a.cat || 'tools'; }
+function pins(){ var p = J(pref('pins')); return Array.isArray(p) ? p : null; }
+function isPin(pkg){ return (pins() || []).indexOf(pkg) >= 0; }
+function togglePin(pkg){ var p = pins() || [], i = p.indexOf(pkg); if (i >= 0) p.splice(i, 1); else p.push(pkg); setPref('pins', JSON.stringify(p)); return i < 0; }
+function appImg(a, grid){ return a.banner ? '<img class="bn" src="' + a.banner + '">' : '<img class="ic" src="' + a.icon + '"' + (grid ? ' style="margin-top:0"' : '') + '>' + (grid ? '' : '<div class="lb">' + esc(a.label) + '</div>'); }
+function byPkg(pkg){ for (var i = 0; i < S.apps.length; i++) if (S.apps[i].pkg === pkg) return S.apps[i]; return null; }
+function loadApps(){
+  return call('getAppsAsync', [], 'getApps').then(function(t){
+    var apps = J(t) || [];
+    var order = ['youtube','netflix','pluto','unitv','tubi','globo','prime','disney','max','spotify','twitch','crunchy'];
+    function sc(x){ var l = (x.label + x.pkg).toLowerCase(); for (var i = 0; i < order.length; i++) if (l.indexOf(order[i]) >= 0) return i; return 99; }
+    apps.sort(function(a, b){ return sc(a) - sc(b) || a.label.localeCompare(b.label); });
+    apps.forEach(function(a){ a.c = catOf(a); });
+    S.apps = apps;
+    if (!pins()) setPref('pins', JSON.stringify(apps.filter(function(a){ return a.c !== 'tools'; }).slice(0, 9).map(function(a){ return a.pkg; })));
+    else { var known = J(pref('knownApps')), pp = pins(), added = [];
+      if (Array.isArray(known)) apps.forEach(function(a){ if (known.indexOf(a.pkg) < 0 && pp.indexOf(a.pkg) < 0 && a.c !== 'tools') { pp.push(a.pkg); added.push(a.label); } });
+      if (added.length) { setPref('pins', JSON.stringify(pp)); toast('Novo app no Início: ' + added.join(', ')); } }
+    setPref('knownApps', JSON.stringify(apps.map(function(a){ return a.pkg; })));
+    renderAppRow(); if (S.tab === 'apps') renderGrid(); if (S.tab === 'lib') renderLib(); renderHist();
+  });
+}
+function renderAppRow(){
+  var h = '';
+  CATS.forEach(function(c){ h += '<div class="cat nav" data-act="cat" data-cat="' + c.k + '"><div class="ic" style="background:' + c.c + '">' + c.i + '</div><span>' + c.n + '</span></div>'; });
+  h += '<div class="gap"></div>';
+  (pins() || []).forEach(function(p){ var a = byPkg(p); if (a) h += '<div class="app nav" data-act="app" data-pkg="' + esc(a.pkg) + '" title="' + esc(a.label) + '">' + appImg(a) + '</div>'; });
+  h += '<div class="app add nav" data-act="cat" data-cat="all">＋</div>';
+  $('appStrip').innerHTML = h; refocus();
+}
+var gridCat = 'all';
+function renderGrid(){
+  var ch = '', cs = [{ k:'all', n:'Todos' }].concat(CATS);
+  cs.forEach(function(c){ ch += '<div class="chip nav' + (gridCat === c.k ? ' on' : '') + '" data-act="chip" data-cat="' + c.k + '">' + c.n + '</div>'; });
+  $('chips').innerHTML = ch;
+  var list = S.apps.filter(function(a){ return gridCat === 'all' || (gridCat === 'fav' ? isPin(a.pkg) : a.c === gridCat); });
+  var h = '';
+  list.forEach(function(a){ h += '<div class="gtile nav" data-act="app" data-pkg="' + esc(a.pkg) + '"><div class="box">' + appImg(a, true) + (isPin(a.pkg) ? '<div class="star">★</div>' : '') + '</div><span>' + esc(a.label) + '</span></div>'; });
+  $('grid').innerHTML = h || '<div class="hint">Nenhum app nessa categoria.</div>'; refocus();
+}
+
+/* ======= Continue assistindo (banco local do Android) ======= */
+function hidden(){ var p = J(pref('histHidden')); return Array.isArray(p) ? p : []; }
+function loadHist(){ S.hist = J(A.getHistory ? A.getHistory(60, false) : '[]') || []; renderHist(); if (S.tab === 'lib') renderLib(); }
+function histCard(e){
+  var a = byPkg(e.pkg), nm = a ? a.label : e.pkg;
+  var bg = e.art ? ' style="background-image:url(\'' + esc(e.art) + '\')"' : (a && a.banner ? ' style="background-image:url(\'' + a.banner + '\')"' : '');
+  return '<div class="hcard nav" data-act="app" data-pkg="' + esc(e.pkg) + '"' + bg + '>' + (a ? '<div class="badge"><img src="' + a.icon + '"></div>' : '') +
+    '<div class="ov">' + esc(e.title) + '<small>' + esc(nm) + (e.subtitle ? ' · ' + esc(e.subtitle) : '') + ' · ' + ago(new Date(e.ts)) + '</small></div></div>';
+}
+function renderHist(){
+  var hid = hidden(), seen = {}, h = '';
+  var list = S.hist.filter(function(e){ if (hid.indexOf(e.pkg) >= 0 || seen[e.pkg]) return false; seen[e.pkg] = 1; return true; });
+  list.slice(0, 12).forEach(function(e){ h += histCard(e); });
+  var access = A.hasMediaAccess ? A.hasMediaAccess() : true;
+  if (!access) h += '<div class="hcard info nav" data-act="access">🔓 Toque para liberar o histórico do Spotify, Netflix, YouTube e outros</div>';
+  else if (!list.length) h += '<div class="hcard info">Os apps que você abrir pela Aura aparecem aqui</div>';
+  h += '<div class="hcard info nav" data-act="tab" data-tab="lib" style="flex-basis:120px">⚙ Gerenciar</div>';
+  $('histStrip').innerHTML = h; refocus();
+}
+function renderLib(){
+  var hid = hidden(), pk = {}, h = '';
+  S.hist.forEach(function(e){ pk[e.pkg] = 1; });
+  S.apps.forEach(function(a){ if (a.c === 'media') pk[a.pkg] = 1; });
+  Object.keys(pk).forEach(function(p){ var a = byPkg(p); if (!a) return; var on = hid.indexOf(p) < 0;
+    h += '<div class="chip nav' + (on ? ' on' : '') + '" data-act="hidetoggle" data-pkg="' + esc(p) + '"><img src="' + a.icon + '">' + esc(a.label) + (on ? ' ✓' : ' ✕') + '</div>'; });
+  $('toggles').innerHTML = h || '<div class="hint">Nenhum app de mídia encontrado.</div>';
+  var g = ''; S.hist.slice(0, 30).forEach(function(e){ g += histCard(e); });
+  $('histGrid').innerHTML = g || '<div class="hint">Histórico vazio.</div>'; refocus();
+}
+
+/* ======= Gemini ======= */
+function context(){
+  var d = new Date(), w = S.weather, s = 'Agora: ' + d.toLocaleString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' }) + '. ';
+  if (S.me.city) s += 'O usuário' + (pref('name') ? ' (' + pref('name') + ')' : '') + ' está em ' + placeName(S.me) + '. ';
+  if (w && w.current) { var c = w.current, dd = w.daily; s += 'Clima atual: ' + Math.round(c.temperature_2m) + '°C, ' + wmo(c.weather_code, 1).d + ', sensação ' + Math.round(c.apparent_temperature) + '°C. Previsão: ';
+    for (var i = 0; i < Math.min(4, dd.time.length); i++) s += dd.time[i] + ' ' + wmo(dd.weather_code[i], 1).d + ' ' + Math.round(dd.temperature_2m_max[i]) + '/' + Math.round(dd.temperature_2m_min[i]) + '°C chuva ' + dd.precipitation_probability_max[i] + '%; '; }
+  if (S.news.length) { s += 'Manchetes de ' + placeName(S.newsCity) + ': '; S.news.slice(0, 6).forEach(function(n){ s += '"' + n.t + '"; '; }); }
+  return s;
+}
+function gemini(prompt){
+  var key = pref('key'); if (!key) return Promise.resolve(null);
+  var body = JSON.stringify({ systemInstruction:{ parts:[{ text:'Você é o Gemini dentro da TV da sala (launcher Aura), no Brasil. Responda em português do Brasil, natural e curto (até 5 frases), pois será lido em voz alta. Sem markdown, listas ou emojis. Contexto em tempo real: ' + context() }] },
+    contents:[{ role:'user', parts:[{ text:prompt }] }], tools:[{ google_search:{} }] });
+  var models = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+  function tryM(i){ if (i >= models.length) return Promise.resolve(null);
+    return POST('https://generativelanguage.googleapis.com/v1beta/models/' + models[i] + ':generateContent?key=' + encodeURIComponent(key), body).then(function(t){
+      var r = J(t), out = null; try { out = r.candidates[0].content.parts.map(function(p){ return p.text || ''; }).join('').trim(); } catch(e){}
+      return out || tryM(i + 1); }); }
+  return tryM(0);
+}
+function speak(t){ if (A.speak) A.speak(t); }
+function showAI(html, ms){ var b = $('aiBox'); b.innerHTML = html; b.style.display = 'block'; clearTimeout(showAI.t); showAI.t = setTimeout(function(){ b.style.display = 'none'; }, ms || 20000); }
+function addChat(who, t){ S.chat.push({ w:who, t:t }); if (S.chat.length > 8) S.chat.shift(); var h = '';
+  S.chat.forEach(function(m){ h += '<div class="msg ' + m.w + '">' + (m.w === 'ai' ? '<b>Gemini</b><br>' : '') + esc(m.t) + '</div>'; }); $('chat').innerHTML = h; }
+function say(t, title){ if (S.tab === 'gem') addChat('ai', t); else showAI('<b>' + (title || 'Gemini') + ':</b> ' + esc(t), Math.min(25000, Math.max(9000, t.length * 70))); speak(t); }
+function localBrief(){
+  var d = new Date(), h = d.getHours(), nm = pref('name'), s = (h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite') + (nm ? ', ' + nm : '') + '! São ' + h + ' horas e ' + d.getMinutes() + ' minutos' + (S.me.city ? ' em ' + S.me.city : '') + '. ';
+  var w = S.weather; if (w && w.current) { var c = w.current, dd = w.daily;
+    s += 'Agora faz ' + Math.round(c.temperature_2m) + ' graus, ' + wmo(c.weather_code, 1).d.toLowerCase() + '. Hoje a máxima é ' + Math.round(dd.temperature_2m_max[0]) + ' e a mínima ' + Math.round(dd.temperature_2m_min[0]) + ' graus';
+    var p = dd.precipitation_probability_max[0]; s += p >= 50 ? ', com ' + p + '% de chance de chuva, leve o guarda-chuva. ' : p >= 20 ? ', com pequena chance de chuva. ' : ', sem previsão de chuva. ';
+    if (dd.time.length > 1) s += 'Amanhã: ' + wmo(dd.weather_code[1], 1).d.toLowerCase() + ', até ' + Math.round(dd.temperature_2m_max[1]) + ' graus. '; }
+  if (S.news.length) { s += 'Em ' + (S.newsCity.city || 'destaque') + ': '; S.news.slice(0, 3).forEach(function(n){ s += n.t + '. '; }); }
+  return s;
+}
+function brief(){
+  if (!pref('key')) { say(localBrief(), 'Resumo'); return; }
+  showAI('<b>Gemini:</b> preparando seu resumo…', 30000);
+  gemini('Faça meu resumo falado agora: cumprimente' + (pref('name') ? ' ' + pref('name') : '') + ', diga a hora e a cidade, o clima agora, a previsão de hoje e amanhã com uma dica prática, e as 2 ou 3 notícias de ' + placeName(S.newsCity) + ' mais relevantes.')
+    .then(function(t){ say(t || localBrief(), 'Resumo'); });
+}
+function ask(){ if (!A.listen || !A.listen()) toast('Reconhecimento de voz indisponível nesta TV'); }
+window.onVoiceResult = function(q){
+  if (!q) return;
+  if (S.tab === 'gem') addChat('me', q); else showAI('<b>Você:</b> ' + esc(q) + '<br><b>Gemini:</b> pensando…', 30000);
+  if (!pref('key')) { if (/tempo|clima|chuva|chov|temperatura|frio|calor|graus|previs|hora|notícia|noticia|resumo/i.test(q)) say(localBrief()); else say('Para conversar sobre qualquer assunto, coloque sua chave do Gemini nas configurações, no ícone de engrenagem. Clima, hora e notícias já funcionam sem ela.'); return; }
+  gemini(q).then(function(t){ say(t || 'Não consegui responder agora. Tenta de novo em instantes?'); });
+};
+window.onAssistKey = function(){ setTab('gem'); ask(); };
+
+/* ======= abas ======= */
+function setTab(t){
+  S.tab = t;
+  ['home','apps','lib','gem'].forEach(function(k){ $('p-' + k).classList.toggle('show', k === t); });
+  [].forEach.call(document.querySelectorAll('.tab'), function(e){ e.classList.toggle('on', e.getAttribute('data-tab') === t); });
+  if (t === 'apps') renderGrid(); if (t === 'lib') { loadHist(); } if (t === 'gem') renderForecast();
+  $('s-' + t).style.transform = 'translateY(0)';
+}
+
+/* ======= navegação pelo controle (rápida, sem travar) ======= */
+var cur = null;
+function scope(){ if ($('homeAsk').style.display === 'block') return '#homeAsk'; if ($('reader').style.display === 'block') return '#reader'; if ($('settings').style.display === 'block') return '#settings'; return '#top, #p-' + S.tab; }
+function navs(){ var out = []; scope().split(',').forEach(function(sel){ out = out.concat([].slice.call(document.querySelectorAll(sel.trim() + ' .nav'))); }); return out; }
+function rectOf(e){ return e.getBoundingClientRect(); }
+function setFocus(e){
+  if (!e) return; [].forEach.call(document.querySelectorAll('.focus'), function(x){ x.classList.remove('focus'); }); cur = e; e.classList.add('focus');
+  if (e.tagName === 'INPUT') e.focus(); else if (document.activeElement && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+  if (e.classList.contains('tab') && e.getAttribute('data-act') === 'tab' && e.getAttribute('data-tab') !== S.tab) setTab(e.getAttribute('data-tab'));
+  ensureVisible(e);
+}
+function ensureVisible(e){
+  var strip = e.closest ? e.closest('.strip') : null;
+  if (strip) { var row = strip.parentNode, rw = row.clientWidth, x = e.offsetLeft, w = e.offsetWidth, cx = strip._x || 0;
+    if (x + w + 70 > rw + cx) cx = x + w + 70 - rw; if (x - 56 < cx) cx = Math.max(0, x - 56); strip._x = cx; strip.style.transform = 'translateX(' + (-cx) + 'px)'; }
+  var page = e.closest ? e.closest('.page') : null;
+  if (page) { var sc = page.querySelector('.scroller'), ph = page.clientHeight, top = 0, n = e;
+    while (n && n !== sc) { top += n.offsetTop; n = n.offsetParent; }
+    var y = sc._y || 0; if (top + e.offsetHeight + 30 > y + ph) y = top + e.offsetHeight + 30 - ph; if (top - 50 < y) y = Math.max(0, top - 50);
+    sc._y = y; sc.style.transform = 'translateY(' + (-y) + 'px)'; }
+}
+function refocus(){ if (cur && !document.body.contains(cur)) { var k = cur.getAttribute('data-pkg'); cur = null; var n = k ? document.querySelector('#p-' + S.tab + ' [data-pkg="' + k + '"]') : null; setFocus(n || document.querySelector('#p-' + S.tab + ' .nav') || document.querySelector('.tab.on')); } }
+function move(dx, dy){
+  var list = navs(); if (!list.length) return; if (!cur || list.indexOf(cur) < 0) { setFocus(list[0]); return; }
+  if (dy > 0 && cur.closest('#top')) { var f0 = document.querySelector('#p-' + S.tab + ' .nav'); if (f0) { setFocus(f0); return; } }
+  var r = rectOf(cur), cx = r.left + r.width / 2, cy = r.top + r.height / 2, best = null, bd = 1e9;
+  for (var i = 0; i < list.length; i++) { var e = list[i]; if (e === cur) continue; var q = rectOf(e); if (!q.width) continue;
+    var x = q.left + q.width / 2, y = q.top + q.height / 2, ddx = x - cx, ddy = y - cy;
+    if (dx && (ddx * dx <= 4 || Math.abs(ddy) > Math.max(r.height, q.height) * 0.9)) continue;
+    if (dy && ddy * dy <= 8) continue;
+    var dist = dx ? Math.abs(ddx) + Math.abs(ddy) * 4 : Math.abs(ddy) * 2 + Math.abs(ddx) * (dy < 0 && cur.closest('.strip') ? 0.4 : 1);
+    if (dist < bd) { bd = dist; best = e; } }
+  if (!best && dy) { /* sobe para as abas / desce para o conteúdo */ best = dy < 0 ? document.querySelector('.tab.on') : document.querySelector('#p-' + S.tab + ' .nav'); if (best === cur) best = null; }
+  if (best) setFocus(best);
+}
+function activate(e){
+  if (!e) return; var a = e.getAttribute('data-act');
+  if (a === 'app') { if (A.stopSpeaking) A.stopSpeaking(); if (A.launch) A.launch(e.getAttribute('data-pkg')); }
+  else if (a === 'tab') { setTab(e.getAttribute('data-tab')); var f = document.querySelector('.tab[data-tab="' + e.getAttribute('data-tab') + '"]'); if (!e.classList.contains('tab')) { cur = null; setFocus(document.querySelector('#p-' + S.tab + ' .nav') || f); } }
+  else if (a === 'search') { if (A.openGoogleAssistant) A.openGoogleAssistant(); }
+  else if (a === 'cat') { gridCat = e.getAttribute('data-cat'); setTab('apps'); cur = null; setFocus(document.querySelector('#grid .nav') || document.querySelector('#chips .nav')); }
+  else if (a === 'chip') { gridCat = e.getAttribute('data-cat'); renderGrid(); cur = null; setFocus(document.querySelector('#chips [data-cat="' + gridCat + '"]')); }
+  else if (a === 'news') { var n = S.news[+e.getAttribute('data-i')]; if (n) openReader(n); }
+  else if (a === 'rdspeak') { speak($('rdTitle').textContent + '. ' + $('rdBody').innerText.slice(0, 3500)); }
+  else if (a === 'rdclose') closeReader();
+  else if (a === 'brief') brief();
+  else if (a === 'ask') ask();
+  else if (a === 'stop') { if (A.stopSpeaking) A.stopSpeaking(); }
+  else if (a === 'assistant') { if (A.openGoogleAssistant) A.openGoogleAssistant(); }
+  else if (a === 'access') { if (A.openMediaAccess) A.openMediaAccess(); toast('Ative "Aura TV - histórico" no acesso a notificações'); }
+  else if (a === 'clearhist') { if (A.clearHistory) A.clearHistory(''); loadHist(); toast('Histórico apagado'); }
+  else if (a === 'hidetoggle') { var p = e.getAttribute('data-pkg'), hd = hidden(), i = hd.indexOf(p); if (i >= 0) hd.splice(i, 1); else hd.push(p); setPref('histHidden', JSON.stringify(hd)); renderLib(); renderHist(); cur = null; setFocus(document.querySelector('#toggles [data-pkg="' + p + '"]')); toast(i >= 0 ? 'Vai aparecer no Início' : 'Oculto do Início'); }
+  else if (a === 'config') openCfg();
+  else if (a === 'save') saveCfg();
+  else if (a === 'close') closeCfg();
+  else if (a === 'stockhome') { $('homeAsk').style.display = 'none'; closeCfg(); if (A.goStockHome) A.goStockHome(); }
+  else if (a === 'homeaura') { $('homeAsk').style.display = 'none'; window.onHomePressed(); }
+  else if (a === 'testvoice') { setPref('voice', $('cfgVoice').value.trim()); setPref('key', $('cfgKey').value.trim()); speak('Oi' + (pref('name') ? ', ' + pref('name') : '') + '! Eu sou a Aura. Estou aqui pra deixar a sua TV mais gostosa de usar.'); }
+  else if (a === 'sethome') { if (A.openSetDefaultHome) A.openSetDefaultHome(); }
+  else if (a === 'tvsettings') { if (A.openSettings) A.openSettings(); }
+  else if (a === 'update') { setPref('updateUrl', $('cfgUpd').value.trim()); toast('Procurando atualização…'); checkUpd(true); }
+  else if (a === 'input') e.focus();
+  else if (a === 'frm-') nudgeFrame(-1); else if (a === 'frm+') nudgeFrame(1); else if (a === 'frm0') { setPref('frame', ''); fit(); $('frameLbl').textContent = '📐 Ajustar tela: tela cheia'; }
+}
+function longPress(e){
+  if (!e || e.getAttribute('data-act') !== 'app' || e.classList.contains('hcard')) return;
+  var on = togglePin(e.getAttribute('data-pkg')); toast(on ? '★ Adicionado aos Favoritos do Início' : 'Removido do Início');
+  renderAppRow(); if (S.tab === 'apps') renderGrid();
+}
+var okDown = 0, okLong = false;
+document.addEventListener('keydown', function(ev){
+  var k = ev.keyCode, inInput = document.activeElement && document.activeElement.tagName === 'INPUT';
+  if (inInput && (k === 37 || k === 39)) return;
+  if ($('reader').style.display === 'block' && (k === 38 || k === 40)) { ev.preventDefault(); readerScroll(k === 40 ? 1 : -1); return; }
+  if (k === 37) { move(-1, 0); ev.preventDefault(); } else if (k === 39) { move(1, 0); ev.preventDefault(); }
+  else if (k === 38) { move(0, -1); ev.preventDefault(); } else if (k === 40) { move(0, 1); ev.preventDefault(); }
+  else if (k === 13 || k === 23) { ev.preventDefault(); if (inInput) { document.activeElement.blur(); move(0, 1); return; }
+    if (!okDown) { okDown = Date.now(); okLong = false; } else if (!okLong && Date.now() - okDown > 650) { okLong = true; longPress(cur); } }
+});
+document.addEventListener('keyup', function(ev){ var k = ev.keyCode; if (k !== 13 && k !== 23) return; var was = okDown; okDown = 0;
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return; if (!okLong && was) activate(cur); okLong = false; });
+document.addEventListener('click', function(ev){ var e = ev.target.closest && ev.target.closest('.nav'); if (e) { setFocus(e); activate(e); } });
+
+/* ======= leitor de notícias (leve, sem navegador) ======= */
+var rdY = 0, rdFrom = null;
+function extract(html, base){
+  var doc = new DOMParser().parseFromString(html, 'text/html');
+  ['script','style','noscript','iframe','nav','header','footer','aside','form','figure figcaption','svg','button'].forEach(function(t){ [].forEach.call(doc.querySelectorAll(t), function(x){ x.remove(); }); });
+  var cands = [].slice.call(doc.querySelectorAll('article, [itemprop=articleBody], .content-text, .materia-conteudo, .entry-content, .post-content, .article-body, .texto, main'));
+  var best = null, bs = 0;
+  (cands.length ? cands : [doc.body]).forEach(function(c){ var sc = 0; [].forEach.call(c.querySelectorAll('p'), function(p){ var l = p.textContent.trim().length; if (l > 60) sc += l; }); if (sc > bs) { bs = sc; best = c; } });
+  if (!best || bs < 300) best = doc.body;
+  var ps = [], seen = {};
+  [].forEach.call(best ? best.querySelectorAll('p, h2, h3, li') : [], function(p){ var t = p.textContent.replace(/\s+/g, ' ').trim();
+    if (t.length < (p.tagName === 'P' ? 45 : 25) || seen[t] || /cookies|newsletter|assine|inscreva|todos os direitos|publicidade|leia também|whatsapp/i.test(t)) return; seen[t] = 1; ps.push({ h:p.tagName !== 'P' && p.tagName !== 'LI', t:t }); });
+  return { img:ogImage(html, base), ps:ps.slice(0, 60) };
+}
+function openReader(n){
+  rdFrom = cur; $('rdSrc').textContent = (n.s || '') + (n.dt ? ' · ' + ago(n.dt) : ''); $('rdTitle').textContent = n.t;
+  $('rdBody').innerHTML = '<p style="color:#9aa0a6">Carregando a notícia…</p>'; rdY = 0; $('rdScroll').style.transform = 'translateY(0)';
+  var im = $('rdImg'); if (n.img) { im.style.backgroundImage = "url('" + n.img + "')"; im.style.display = 'block'; } else im.style.display = 'none';
+  $('reader').style.display = 'block'; cur = null; setFocus(document.querySelector('#reader [data-act=rdspeak]'));
+  var go = n.html ? Promise.resolve(n.html) : (n.link ? GET(n.link) : Promise.resolve(''));
+  go.then(function(h){
+    var r = h ? extract(h, n.link) : { ps:[] };
+    if (r.img && !n.img) { im.style.backgroundImage = "url('" + r.img + "')"; im.style.display = 'block'; }
+    var out = '';
+    r.ps.forEach(function(p){ out += p.h ? '<h3 style="font-size:24px;margin:18px 0 8px">' + esc(p.t) + '</h3>' : '<p style="margin:0 0 16px">' + esc(p.t) + '</p>'; });
+    $('rdBody').innerHTML = out || '<p>' + esc(n.d || 'Não consegui abrir o texto completo desta notícia.') + '</p>';
+  });
+}
+function closeReader(){ $('reader').style.display = 'none'; if (A.stopSpeaking) A.stopSpeaking(); cur = null; setFocus(rdFrom && document.body.contains(rdFrom) ? rdFrom : document.querySelector('#newsStrip .nav')); }
+function readerScroll(dir){ var max = Math.max(0, $('rdScroll').offsetHeight - 720); rdY = Math.max(0, Math.min(max, rdY + dir * 260)); $('rdScroll').style.transform = 'translateY(' + (-rdY) + 'px)'; }
+
+/* ======= encaixe na tela (automático + enquadramento) ======= */
+function frame(){ var f = parseFloat(pref('frame')); return isNaN(f) ? 0 : Math.max(0, Math.min(12, f)); }
+function fit(){
+  var W = window.innerWidth || document.documentElement.clientWidth, H = window.innerHeight || document.documentElement.clientHeight;
+  var k = 1 - frame() * 2 / 100, sx = W / 1280 * k, sy = H / 720 * k;
+  var st = $('stage'); st.style.borderRadius = frame() ? '6px' : '0';
+  st.style.transform = 'translate(' + ((W - 1280 * sx) / 2) + 'px,' + ((H - 720 * sy) / 2) + 'px) scale(' + sx + ',' + sy + ')';
+}
+window.addEventListener('resize', fit); fit();
+function nudgeFrame(d){ var f = Math.max(0, Math.min(12, frame() + d)); setPref('frame', '' + f); fit(); $('frameLbl').textContent = '📐 Ajustar tela: ' + (f ? f + '% de margem' : 'tela cheia'); }
+
+/* ======= configurações ======= */
+var UPDATE_URL = 'https://raw.githubusercontent.com/VilaoBr/Roger/main/aura-tv/';
+function openCfg(){ $('cfgName').value = pref('name'); $('cfgCity').value = pref('city'); $('cfgNews').value = pref('newsCity'); $('cfgKey').value = pref('key'); $('cfgAuto').value = pref('auto') || 'sim'; $('cfgUpd').value = pref('updateUrl') || UPDATE_URL;
+  $('cfgVoice').value = pref('voice'); $('frameLbl').textContent = '📐 Ajustar tela: ' + (frame() ? frame() + '% de margem' : 'tela cheia') + ' (se cortar nas bordas, afaste)'; $('verLbl').textContent = 'Versão ' + (A.versionName ? A.versionName() : 'web'); $('settings').style.display = 'block'; cur = null; setFocus($('cfgName')); }
+function closeCfg(){ $('settings').style.display = 'none'; cur = null; setFocus(document.querySelector('#gear')); }
+function saveCfg(){ var oc = pref('city'), on = pref('newsCity');
+  setPref('name', $('cfgName').value.trim()); setPref('city', $('cfgCity').value.trim()); setPref('newsCity', $('cfgNews').value.trim()); setPref('key', $('cfgKey').value.trim()); setPref('voice', $('cfgVoice').value.trim());
+  setPref('auto', $('cfgAuto').value.trim().toLowerCase()); setPref('updateUrl', $('cfgUpd').value.trim());
+  toast('Salvo!'); closeCfg(); renderMe(); if (oc !== pref('city') || on !== pref('newsCity')) refreshAll(); }
+function checkUpd(manual){ var u = pref('updateUrl') || UPDATE_URL; if (!u) { if (manual) toast('Nenhum servidor de atualização configurado'); return; }
+  call('checkUpdateAsync', [u], 'checkUpdate').then(function(r){ if (!manual && (r === 'none' || r === 'error')) return;
+    toast(r === 'none' ? 'Você já está na versão mais nova' : r === 'error' ? 'Não consegui baixar a atualização' : r === 'apk' ? 'Nova versão baixada, confirme a instalação' : 'Interface atualizada!'); }); }
+
+/* ======= voltar / home ======= */
+window.onBack = function(){
+  if ($('homeAsk').style.display === 'block') { $('homeAsk').style.display = 'none'; window.onHomePressed(); return; }
+  if ($('reader').style.display === 'block') { closeReader(); return; }
+  if ($('settings').style.display === 'block') { closeCfg(); return; }
+  if ($('aiBox').style.display === 'block') { $('aiBox').style.display = 'none'; if (A.stopSpeaking) A.stopSpeaking(); return; }
+  if (S.tab !== 'home') { setTab('home'); cur = null; setFocus(document.querySelector('.tab[data-tab="home"]')); return; }
+  cur = null; setFocus(document.querySelector('#appStrip .app') || document.querySelector('.tab.on'));
+};
+window.onHomePressed = function(){ $('settings').style.display = 'none'; $('aiBox').style.display = 'none'; setTab('home'); cur = null; setFocus(document.querySelector('#appStrip .app') || document.querySelector('.tab.on')); };
+window.onMenuKey = function(){ openCfg(); };
+window.onHomeKey = function(){ if ($('homeAsk').style.display === 'block') { $('homeAsk').style.display = 'none'; window.onHomePressed(); return; }
+  $('settings').style.display = 'none'; $('reader').style.display = 'none'; $('homeAsk').style.display = 'block'; cur = null; setFocus(document.querySelector('#homeAsk [data-act="homeaura"]')); };
+var lastRefresh = 0;
+window.onHomeResume = function(){ loadHist(); loadApps(); if (Date.now() - lastRefresh > 20 * 60000) refreshAll(); };
+
+/* ======= cache (abre instantâneo, mesmo sem internet) ======= */
+function saveCache(){ try { setPref('cache', JSON.stringify({ me:S.me, newsCity:S.newsCity, weather:S.weather, news:S.news })); } catch(e){} }
+function loadCache(){ var c = J(pref('cache')); if (!c) return; S.me = c.me || {}; S.newsCity = c.newsCity || {}; S.weather = c.weather; S.news = c.news || []; renderMe(); renderNews(); renderForecast(); }
+
+function refreshAll(){
+  lastRefresh = Date.now();
+  locateMe().then(function(p){
+    if (p) S.me = p; renderMe();
+    var nc = pref('newsCity');
+    var newsP = nc ? geocode(nc).then(function(q){ S.newsCity = q || { city:nc.split(',')[0], uf:(nc.split(',')[1] || '').trim() }; }) : Promise.resolve(S.newsCity = S.me);
+    newsP.then(loadNews);
+    if (S.me.lat != null) loadWeather(S.me);
+  });
+}
+
+/* ======= início ======= */
+loadCache();
+if (!S.news.length) renderNews();
+renderAppRow(); renderHist();
+setFocus(document.querySelector('.tab[data-tab="home"]'));
+setTimeout(function(){
+  loadApps().then(function(){ loadHist(); if (!cur || cur.classList.contains('tab')) { cur = null; setFocus(document.querySelector('#appStrip .app') || document.querySelector('.tab.on')); } });
+  refreshAll();
+  var auto = pref('auto') || 'sim';
+  if (auto.indexOf('n') !== 0) { var lb = +pref('lastBrief') || 0; if (Date.now() - lb > 3 * 3600000) { setPref('lastBrief', '' + Date.now()); setTimeout(brief, 6000); } }
+}, 50);
+setInterval(refreshAll, 30 * 60000);
+setInterval(loadHist, 60000);
+setTimeout(function(){ checkUpd(false); }, 20000); setInterval(function(){ checkUpd(false); }, 6 * 3600000);
+</script>
+</body>
+</html>
