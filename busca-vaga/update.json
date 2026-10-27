@@ -1,0 +1,8 @@
+{
+ "versionCode": 2,
+ "versionName": "1.1",
+ "apkUrl": "https://raw.githubusercontent.com/VilaoBr/Roger/main/busca-vaga/BuscaVaga-v1.1.apk",
+ "sha256": "41a760821ce73fae425d422c11e7767794cf86e21ab3e4667a612eb5e6d508f5",
+ "notas": "Fila única com vagas de todos os sites, cargos parecidos, IA grátis (Gemini/Groq), correção Guaíra-SP e atualização automática.",
+ "minSdk": 24
+}
