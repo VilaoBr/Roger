@@ -1,0 +1,436 @@
+{
+ "schema": 1,
+ "versao": 1,
+ "geradoEm": "2026-10-27",
+ "comumJs": "/* Busca Vaga — utilidades comuns aos extratores (vem do config.json, atualizável sem APK novo).\n   Cada extrator devolve JSON.stringify([{titulo, empresa, local, cidade, uf, modalidade, contrato, data, dataTexto, link, descricao}]) */\nvar BV = (function () {\n  function t(el) { return el ? (el.innerText || el.textContent || '').replace(/\\s+/g, ' ').trim() : ''; }\n  function q(root, sel) { try { return (root || document).querySelector(sel); } catch (e) { return null; } }\n  function qa(root, sel) { try { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); } catch (e) { return []; } }\n  function tq(root, sel) { return t(q(root, sel)); }\n  function abs(h) { try { return h ? new URL(h, document.baseURI).href : ''; } catch (e) { return h || ''; } }\n  function pad(n) { return (n < 10 ? '0' : '') + n; }\n  function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }\n  function norm(s) { return (s || '').toString().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase(); }\n  /* \"2026-10-05\", \"05/10/2026\", \"13/10\", \"hoje\", \"ontem\", \"há 3 dias\", \"Há 1 semana\" -> yyyy-mm-dd */\n  function data(s) {\n    s = norm(s);\n    if (!s) return '';\n    var m = s.match(/(\\d{4})[-\\/](\\d{2})[-\\/](\\d{2})/); if (m) return m[1] + '-' + m[2] + '-' + m[3];\n    m = s.match(/(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})/); if (m) return m[3] + '-' + pad(+m[2]) + '-' + pad(+m[1]);\n    var hoje = new Date();\n    m = s.match(/(\\d{1,2})\\/(\\d{1,2})(?!\\/)/);\n    if (m) { var d = new Date(hoje.getFullYear(), +m[2] - 1, +m[1]); if (d - hoje > 86400000 * 2) d.setFullYear(d.getFullYear() - 1); return iso(d); }\n    var meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];\n    m = s.match(/(\\d{1,2})\\s+(?:de\\s+)?(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)/);\n    if (m) { var d2 = new Date(hoje.getFullYear(), meses.indexOf(m[2]), +m[1]); if (d2 - hoje > 86400000 * 2) d2.setFullYear(d2.getFullYear() - 1); return iso(d2); }\n    if (/\\bhoje\\b|agora|hora|minuto|today/.test(s)) return iso(hoje);\n    if (/\\bontem\\b|yesterday/.test(s)) return iso(new Date(hoje - 86400000));\n    m = s.match(/(\\d+)\\+?\\s*(dia|semana|mes|meses|ano|day|week|month)/);\n    if (m) {\n      var n = +m[1], u = m[2];\n      var dias = (u.indexOf('sem') === 0 || u === 'week') ? 7 : ((u.indexOf('mes') === 0 || u === 'month') ? 30 : (u === 'ano' ? 365 : 1));\n      return iso(new Date(hoje - n * dias * 86400000));\n    }\n    return '';\n  }\n  function modalidade(s) {\n    s = norm(s);\n    if (/hibrid|hybrid/.test(s)) return 'hibrido';\n    if (/home.?office|remot|teletrabalho|remote/.test(s)) return 'remoto';\n    if (/presencial|on-site|onsite/.test(s)) return 'presencial';\n    return '';\n  }\n  function contrato(s) {\n    s = norm(s);\n    var out = [];\n    if (/\\bclt\\b|efetivo|vacancy_type_effective|full_time|tempo integral/.test(s)) out.push('CLT');\n    if (/\\bpj\\b|pessoa juridica|legal_entity|contractor/.test(s)) out.push('PJ');\n    if (/estagi|internship/.test(s)) out.push('Estágio');\n    if (/temporari|temporary/.test(s)) out.push('Temporário');\n    if (/aprendiz|apprentice/.test(s)) out.push('Jovem Aprendiz');\n    if (/trainee/.test(s)) out.push('Trainee');\n    if (/freelanc|autonom/.test(s)) out.push('Freelancer');\n    if (/meio periodo|part.?time/.test(s)) out.push('Meio período');\n    return out.join(',');\n  }\n  /* Vagas declaradas em JSON-LD (schema.org JobPosting) */\n  function ld() {\n    var out = [];\n    function walk(o) {\n      if (!o || typeof o !== 'object') return;\n      if (Array.isArray(o)) { o.forEach(walk); return; }\n      var ty = o['@type'];\n      if (ty === 'JobPosting' || (Array.isArray(ty) && ty.indexOf('JobPosting') >= 0)) {\n        var loc = Array.isArray(o.jobLocation) ? o.jobLocation[0] : o.jobLocation;\n        var a = (loc && loc.address) || {};\n        var desc = (o.description || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();\n        var org = o.hiringOrganization;\n        out.push({ titulo: o.title || '', empresa: (org && (org.name || (typeof org === 'string' ? org : ''))) || '',\n          cidade: a.addressLocality || '', uf: a.addressRegion || '', local: '',\n          modalidade: o.jobLocationType === 'TELECOMMUTE' ? 'remoto' : modalidade(desc.slice(0, 400)),\n          contrato: contrato(String(o.employmentType || '')), data: data(o.datePosted || ''), dataTexto: '',\n          link: abs(o.url || ''), descricao: desc.slice(0, 300) });\n      }\n      Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') walk(o[k]); });\n    }\n    qa(document, 'script[type=\"application/ld+json\"]').forEach(function (s) { try { walk(JSON.parse(s.textContent)); } catch (e) {} });\n    return out;\n  }\n  function saida(v) {\n    var vistos = {};\n    return JSON.stringify((v || []).filter(function (x) {\n      if (!x || !x.titulo) return false;\n      x.titulo = String(x.titulo).replace(/\\s+/g, ' ').trim();\n      var k = x.link || (x.titulo + '|' + x.empresa);\n      if (vistos[k]) return false; vistos[k] = 1; return true;\n    }).map(function (x) {\n      ['empresa', 'local', 'cidade', 'uf', 'modalidade', 'contrato', 'data', 'dataTexto', 'link', 'descricao'].forEach(function (c) {\n        x[c] = x[c] == null ? '' : String(x[c]).trim();\n      });\n      return x;\n    }));\n  }\n  var busca = (typeof BV_BUSCA !== 'undefined') ? BV_BUSCA : {};\n  return { t: t, q: q, qa: qa, tq: tq, abs: abs, data: data, norm: norm, modalidade: modalidade, contrato: contrato, ld: ld, saida: saida, busca: busca };\n})();\n",
+ "sites": [
+  {
+   "id": "linkedin",
+   "nome": "LinkedIn",
+   "cor": "#0A66C2",
+   "modo": "http",
+   "termos": "ou",
+   "maxTermos": 8,
+   "paginas": 2,
+   "passoPagina": 10,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={qOu}&location={liLocal}{liGeo}&distance=5{liTPR}{liJT}&start={inicio}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={qOu}&location={liLocal}{liGeoPais}{liWT}{liTPR}{liJT}&start={inicio}"
+    },
+    {
+     "quando": "remotoComCidade",
+     "marcaRemoto": true,
+     "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={qOu}&location=Brasil&geoId=106057199&f_WT=2{liTPR}{liJT}&start={inicio}"
+    }
+   ],
+   "extrator": "(function () {\n  var v = BV.qa(document, 'li').filter(function (li) { return BV.q(li, '.base-search-card__title'); }).map(function (li) {\n    var local = BV.tq(li, '.job-search-card__location');\n    var tm = BV.q(li, 'time');\n    var a = BV.q(li, 'a.base-card__full-link') || BV.q(li, 'a[href*=\"/jobs/view/\"]');\n    return { titulo: BV.tq(li, '.base-search-card__title'), empresa: BV.tq(li, '.base-search-card__subtitle'), local: local,\n      modalidade: BV.modalidade(local), data: tm ? (tm.getAttribute('datetime') || BV.data(BV.t(tm))) : '', dataTexto: BV.t(tm),\n      link: a ? a.href.split('?')[0] : '' };\n  });\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "gupy",
+   "nome": "Gupy",
+   "cor": "#2C2CE8",
+   "modo": "http",
+   "termos": "um",
+   "maxTermos": 6,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://portal.gupy.io/job-search/term={qPath}{gupyLocal}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://portal.gupy.io/job-search/term={qPath}{gupyLocal}{gupyWT}"
+    },
+    {
+     "quando": "remotoComCidade",
+     "marcaRemoto": true,
+     "url": "https://portal.gupy.io/job-search/term={qPath}&workplaceTypes[]=remote"
+    }
+   ],
+   "extrator": "(function () {\n  var tipos = { vacancy_type_effective: 'CLT', vacancy_type_internship: 'Estágio', vacancy_type_temporary: 'Temporário',\n    vacancy_legal_entity: 'PJ', vacancy_type_legal_entity: 'PJ', vacancy_type_apprentice: 'Jovem Aprendiz', vacancy_type_trainee: 'Trainee',\n    vacancy_type_freelancer: 'Freelancer', vacancy_type_autonomous: 'Freelancer', vacancy_type_part_time: 'Meio período',\n    vacancy_type_summer: 'Temporário', vacancy_type_talent_pool: '', vacancy_type_associate: '', vacancy_type_lecturer: '', vacancy_type_volunteer: '' };\n  var lista = [];\n  try {\n    var d = JSON.parse(BV.q(document, '#__NEXT_DATA__').textContent);\n    lista = ((d.props.pageProps.initialJobList || {}).data) || [];\n  } catch (e) {}\n  var v = lista.map(function (j) {\n    var wt = j.workplaceType === 'remote' ? 'remoto' : j.workplaceType === 'hybrid' ? 'hibrido' : j.workplaceType === 'on-site' ? 'presencial' : '';\n    return { titulo: j.name, empresa: j.careerPageName, cidade: j.city, uf: j.state, local: [j.city, j.state].filter(Boolean).join(' - '),\n      modalidade: wt, contrato: (j.type in tipos) ? tipos[j.type] : BV.contrato(j.type), data: BV.data(j.publishedDate || ''), link: j.jobUrl,\n      descricao: (j.description || '').slice(0, 300) };\n  });\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "catho",
+   "nome": "Catho",
+   "cor": "#E3007B",
+   "modo": "http",
+   "termos": "um",
+   "maxTermos": 3,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.catho.com.br/vagas/{qSlug}/{cidadeSlug}-{ufMin}/"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.catho.com.br/vagas/{qSlug}{remSlug}/"
+    },
+    {
+     "quando": "remotoComCidade",
+     "url": "https://www.catho.com.br/vagas/{qSlug}-home-office/"
+    }
+   ],
+   "extrator": "(function () {\n  var b = BV.busca || {};\n  var v = BV.qa(document, 'li[data-offer-item]').map(function (li) {\n    var a = BV.q(li, 'h2 a') || BV.q(li, 'a[href*=\"/vagas/\"]');\n    var local = '';\n    BV.qa(li, 'p').forEach(function (p) { if (!local && BV.q(p, '.i_job_location')) local = BV.t(p); });\n    var maisCidades = /\\+\\s*\\d+\\s*cidade/i.test(local);\n    local = local.replace(/^\\d+\\s*vagas?\\s*-\\s*/i, '').replace(/\\+\\s*\\d+\\s*cidades?/i, '').trim();\n    var bate = (li.getAttribute('data-matches-filter') || '').toLowerCase() === 'true';\n    var tag = BV.tq(li, 'span.tag');\n    var titulo = a ? (a.getAttribute('title') || BV.t(a)) : '';\n    return { titulo: titulo, empresa: BV.tq(li, 'p.mb-2 span'),\n      cidade: bate && b.cidade ? b.cidade : (maisCidades ? '' : local), uf: bate && b.uf ? b.uf : '', local: local + (maisCidades ? ' e outras cidades' : ''),\n      modalidade: BV.modalidade(titulo + ' ' + local + ' ' + tag), contrato: BV.contrato(BV.t(li)), data: BV.data(tag), dataTexto: tag,\n      link: a ? a.href : '' };\n  });\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "infojobs",
+   "nome": "InfoJobs",
+   "cor": "#167DB7",
+   "modo": "http",
+   "termos": "um",
+   "maxTermos": 3,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.infojobs.com.br/vagas-de-emprego-{qSlug}-em-{cidadeSlug},-{ufMin}.aspx"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.infojobs.com.br/vagas-de-emprego-{qSlug}{remSlug}.aspx"
+    },
+    {
+     "quando": "remotoComCidade",
+     "url": "https://www.infojobs.com.br/vagas-de-emprego-{qSlug}-home-office.aspx"
+    }
+   ],
+   "extrator": "(function () {\n  var v = BV.qa(document, '.js_vacancyLoad').map(function (c) {\n    var dv = BV.q(c, '.js_date');\n    var titulo = BV.tq(c, '.js_vacancyTitle') || BV.tq(c, 'h2');\n    var local = BV.tq(c, 'div.text-body.mb-8').replace(/,\\s*\\d+\\s*Km.*$/i, '');\n    var txt = BV.t(c);\n    var tb = BV.qa(c, 'div.text-body').filter(function (d) { return d.className.indexOf('mb-8') < 0; });\n    var emp = tb.length ? BV.t(tb[0]) : '';\n    var a0 = BV.q(c, 'a');\n    var link = c.getAttribute('href') || (a0 ? a0.getAttribute('href') : '');\n    return { titulo: titulo, empresa: emp, local: local, modalidade: BV.modalidade(txt.replace(titulo, '')), contrato: BV.contrato(txt),\n      data: dv ? BV.data(dv.getAttribute('data-value')) : '', link: BV.abs(link) };\n  });\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "vagas",
+   "nome": "Vagas.com",
+   "cor": "#0E6E55",
+   "modo": "http",
+   "termos": "um",
+   "maxTermos": 3,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.vagas.com.br/vagas-de-{qSlug}-em-{cidadeSlug}-{ufMin}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.vagas.com.br/vagas-de-{qSlug}"
+    }
+   ],
+   "extrator": "(function () {\n  var v = BV.qa(document, 'li.vaga').map(function (li) {\n    var a = BV.q(li, 'h2.cargo a') || BV.q(li, 'a.link-detalhes-vaga');\n    var local = BV.tq(li, '.vaga-local').replace(/A empresa aceita.*$/i, '').trim();\n    return { titulo: a ? (a.getAttribute('title') || BV.t(a)) : '', empresa: BV.tq(li, '.emprVaga'), local: local,\n      modalidade: BV.modalidade(local), contrato: BV.contrato(BV.tq(li, '.nivelVaga')),\n      data: BV.data(BV.tq(li, '.data-publicacao')), dataTexto: BV.tq(li, '.data-publicacao'), link: a ? a.href : '',\n      descricao: BV.tq(li, '.detalhes') };\n  });\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "bne",
+   "nome": "BNE",
+   "cor": "#361998",
+   "modo": "http",
+   "termos": "um",
+   "maxTermos": 3,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.bne.com.br/vagas-de-emprego-para-{qSlug}-em-{cidadeSlug}-{ufMin}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.bne.com.br/vagas-de-emprego-para-{qSlug}{remSlug}"
+    }
+   ],
+   "extrator": "(function () {\n  var v = [];\n  /* O BNE embute a lista em JSON (com \"PathUrlJob\") num atributo da página. */\n  BV.qa(document, '*').some(function (e) {\n    for (var i = 0; i < e.attributes.length; i++) {\n      var val = e.attributes[i].value;\n      if (val && val.length > 200 && val.indexOf('PathUrlJob') >= 0 && val.charAt(0) === '[') {\n        try {\n          JSON.parse(val).forEach(function (j) {\n            v.push({ titulo: j.Titulo || (j.Function && j.Function.Name) || '', empresa: j.Confidential ? '' : (j.CompanyName || ''),\n              cidade: (j.City && j.City.Name) || '', uf: j.StateAbbreviation || '', modalidade: j.Home_Office ? 'remoto' : '',\n              contrato: BV.contrato((j.LinkType || []).join(' ')), data: BV.data(j.PostDate || j.ReleaseDate || ''), link: j.Url || '',\n              descricao: (j.GeneralDescription || '').slice(0, 300) });\n          });\n        } catch (x) {}\n        return true;\n      }\n    }\n    return false;\n  });\n  if (!v.length) {\n    v = BV.qa(document, '.card--list--vagas').map(function (c) {\n      var itens = BV.qa(c, '.info__vaga-item').map(BV.t);\n      var local = itens.filter(function (s) { return /\\/\\s*[A-Z]{2}\\s*$/.test(s); })[0] || '';\n      var id = c.getAttribute('data-job-id');\n      return { titulo: BV.tq(c, 'h2').replace(/^vaga de\\s+/i, ''), empresa: itens[1] || '', local: local,\n        modalidade: BV.q(c, '.is-home-office') ? 'remoto' : '', link: 'https://www.bne.com.br/vagas-de-emprego/' + id,\n        descricao: BV.tq(c, '.info__vaga p') };\n    });\n  }\n  return BV.saida(v);\n})()"
+  },
+  {
+   "id": "trabalhabrasil",
+   "nome": "Trabalha Brasil",
+   "cor": "#F26522",
+   "modo": "http",
+   "termos": "um",
+   "maxTermos": 3,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.trabalhabrasil.com.br/vagas-de-emprego-em-{cidadeSlug}-{ufMin}/{qSlug}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.trabalhabrasil.com.br/vagas-de-emprego/{qSlug}{remSlug}"
+    },
+    {
+     "quando": "remotoComCidade",
+     "url": "https://www.trabalhabrasil.com.br/vagas-de-emprego/{qSlug}-home-office"
+    }
+   ],
+   "extrator": "(function () {\n  var v = BV.qa(document, 'article.job-card').map(function (c) {\n    var a = BV.q(c, 'a.job-link') || BV.q(c, 'a');\n    var badges = BV.tq(c, '.job-badges');\n    var det = BV.tq(c, '.job-details');\n    var dt = BV.tq(c, '.job-date, time, .job-detail--date, .job-published');\n    return { titulo: BV.tq(c, '.job-title').replace(/^\\d+\\s+vagas?\\s+de\\s+/i, ''), empresa: BV.tq(c, '.job-company'),\n      local: BV.tq(c, '.job-location'), modalidade: BV.q(c, '.job-badge--remote') ? 'remoto' : BV.modalidade(badges),\n      contrato: BV.contrato(badges + ' ' + det), data: BV.data(dt), dataTexto: dt, link: a ? a.href : '' };\n  });\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "empregos",
+   "nome": "Empregos.com.br",
+   "cor": "#00A859",
+   "modo": "webview",
+   "termos": "um",
+   "maxTermos": 2,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://www.empregos.com.br/vagas/{qSlug}/{cidadeSlug}-{ufMin}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://www.empregos.com.br/vagas/{qSlug}{remSlug}"
+    }
+   ],
+   "extrator": "(function () { return BV.saida(BV.ld()); })()"
+  },
+  {
+   "id": "indeed",
+   "nome": "Indeed",
+   "cor": "#2164F3",
+   "modo": "webview",
+   "termos": "ou",
+   "maxTermos": 6,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://br.indeed.com/jobs?q={qOu}&l={indeedLocal}{indeedFromage}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://br.indeed.com/jobs?q={qOu}&l={indeedLocal}{indeedFromage}{indeedRemoto}"
+    }
+   ],
+   "extrator": "(function () {\n  var v = [];\n  try {\n    var pd = window.mosaic && window.mosaic.providerData && window.mosaic.providerData['mosaic-provider-jobcards'];\n    var res = pd && pd.metaData && pd.metaData.mosaicProviderJobCardsModel && pd.metaData.mosaicProviderJobCardsModel.results;\n    (res || []).forEach(function (j) {\n      v.push({ titulo: j.displayTitle || j.title, empresa: j.company, local: j.formattedLocation,\n        modalidade: j.remoteLocation ? 'remoto' : BV.modalidade(j.formattedLocation),\n        contrato: BV.contrato((j.jobTypes || []).join(' ')), data: j.pubDate ? new Date(j.pubDate).toISOString().slice(0, 10) : BV.data(j.formattedRelativeTime),\n        dataTexto: j.formattedRelativeTime || '', link: 'https://br.indeed.com/viewjob?jk=' + j.jobkey,\n        descricao: (j.snippet || '').replace(/<[^>]+>/g, ' ').slice(0, 300) });\n    });\n  } catch (e) {}\n  if (!v.length) {\n    v = BV.qa(document, '.job_seen_beacon, .cardOutline').map(function (c) {\n      var a = BV.q(c, 'h2 a, a.jcs-JobTitle');\n      var local = BV.tq(c, '[data-testid=\"text-location\"], .companyLocation');\n      var dt = BV.tq(c, '.date, [data-testid=\"myJobsStateDate\"]');\n      return { titulo: BV.t(a), empresa: BV.tq(c, '[data-testid=\"company-name\"], .companyName'), local: local,\n        modalidade: BV.modalidade(local), dataTexto: dt, data: BV.data(dt), link: a ? a.href : '' };\n    });\n  }\n  return BV.saida(v.length ? v : BV.ld());\n})()"
+  },
+  {
+   "id": "jooble",
+   "nome": "Jooble",
+   "cor": "#0099CC",
+   "modo": "webview",
+   "termos": "um",
+   "maxTermos": 2,
+   "buscas": [
+    {
+     "quando": "cidade",
+     "url": "https://br.jooble.org/SearchResult?ukw={q}&rgns={joobleLocal}"
+    },
+    {
+     "quando": "semCidade",
+     "url": "https://br.jooble.org/SearchResult?ukw={q}{joobleRem}"
+    }
+   ],
+   "extrator": "(function () { return BV.saida(BV.ld()); })()"
+  }
+ ],
+ "gruposCargos": [
+  {
+   "id": "vendas",
+   "nome": "Vendas / comercial",
+   "termos": [
+    "vendedor",
+    "vendedora",
+    "vendas",
+    "vendedor interno",
+    "vendedor externo",
+    "consultor de vendas",
+    "consultora de vendas",
+    "executivo de vendas",
+    "executivo comercial",
+    "representante comercial",
+    "representante de vendas",
+    "assistente comercial",
+    "auxiliar comercial",
+    "consultor comercial",
+    "closer",
+    "SDR",
+    "BDR",
+    "inside sales",
+    "promotor de vendas",
+    "atendente de loja",
+    "atendente de vendas",
+    "balconista",
+    "vendedor de loja",
+    "operador de vendas",
+    "televendas",
+    "vendedor pracista"
+   ]
+  },
+  {
+   "id": "atendimento",
+   "nome": "Atendimento / SAC / telemarketing",
+   "termos": [
+    "atendente",
+    "atendimento ao cliente",
+    "SAC",
+    "operador de telemarketing",
+    "teleatendimento",
+    "call center",
+    "central de atendimento",
+    "assistente de atendimento",
+    "analista de atendimento",
+    "customer success",
+    "suporte ao cliente",
+    "operador de atendimento",
+    "atendente de call center",
+    "agente de atendimento",
+    "relacionamento com o cliente",
+    "chat"
+   ]
+  },
+  {
+   "id": "logistica",
+   "nome": "Logística / fretes / expedição",
+   "termos": [
+    "auxiliar de logística",
+    "assistente de logística",
+    "analista de logística",
+    "logística",
+    "expedição",
+    "auxiliar de expedição",
+    "conferente",
+    "separador",
+    "fretes",
+    "analista de fretes",
+    "assistente de fretes",
+    "programador de transportes",
+    "roteirizador",
+    "operador de logística",
+    "almoxarife",
+    "auxiliar de almoxarifado",
+    "transportes",
+    "despachante"
+   ]
+  },
+  {
+   "id": "administrativo",
+   "nome": "Administrativo",
+   "termos": [
+    "auxiliar administrativo",
+    "assistente administrativo",
+    "administrativo",
+    "analista administrativo",
+    "auxiliar de escritório",
+    "assistente de escritório",
+    "secretária",
+    "secretário",
+    "office boy",
+    "auxiliar de faturamento",
+    "assistente de faturamento",
+    "auxiliar financeiro",
+    "assistente financeiro",
+    "auxiliar de departamento pessoal",
+    "assistente de departamento pessoal",
+    "digitador",
+    "back office"
+   ]
+  },
+  {
+   "id": "caixa",
+   "nome": "Caixa / operador de loja",
+   "termos": [
+    "operador de caixa",
+    "caixa",
+    "atendente de caixa",
+    "operador de loja",
+    "fiscal de caixa",
+    "repositor",
+    "repositor de mercadorias",
+    "auxiliar de loja",
+    "empacotador",
+    "frente de caixa",
+    "atendente de supermercado"
+   ]
+  },
+  {
+   "id": "recepcao",
+   "nome": "Recepção",
+   "termos": [
+    "recepcionista",
+    "recepção",
+    "auxiliar de recepção",
+    "atendente de recepção",
+    "concierge",
+    "porteiro",
+    "telefonista"
+   ]
+  },
+  {
+   "id": "estoque",
+   "nome": "Estoque / almoxarifado",
+   "termos": [
+    "estoquista",
+    "auxiliar de estoque",
+    "assistente de estoque",
+    "almoxarife",
+    "auxiliar de almoxarifado",
+    "conferente",
+    "repositor",
+    "controlador de estoque",
+    "operador de empilhadeira",
+    "auxiliar de armazém",
+    "armazém"
+   ]
+  },
+  {
+   "id": "producao",
+   "nome": "Produção / operacional",
+   "termos": [
+    "auxiliar de produção",
+    "operador de produção",
+    "ajudante geral",
+    "auxiliar geral",
+    "operador de máquinas",
+    "montador",
+    "auxiliar de linha de produção",
+    "operador industrial",
+    "safrista"
+   ]
+  },
+  {
+   "id": "motorista",
+   "nome": "Motorista / entregas",
+   "termos": [
+    "motorista",
+    "motorista categoria B",
+    "motorista entregador",
+    "entregador",
+    "motoboy",
+    "ajudante de motorista",
+    "motorista de caminhão",
+    "motorista carreteiro",
+    "motorista de aplicativo"
+   ]
+  },
+  {
+   "id": "marketing_digital",
+   "nome": "Marketing digital / redes sociais",
+   "termos": [
+    "marketing digital",
+    "social media",
+    "analista de marketing",
+    "assistente de marketing",
+    "auxiliar de marketing",
+    "analista de mídias sociais",
+    "tráfego pago",
+    "gestor de tráfego",
+    "copywriter",
+    "afiliado"
+   ]
+  }
+ ],
+ "limites": {
+  "concorrencia": 6,
+  "timeoutHttpSeg": 20,
+  "timeoutWebviewSeg": 25,
+  "maxVagasPorSite": 120,
+  "ia": {
+   "loteClassificacao": 25,
+   "maxLotesPorBusca": 4,
+   "intervaloMinMs": 4500,
+   "timeoutSeg": 30,
+   "cacheDias": 7
+  }
+ },
+ "linkedinGeoIds": {
+  "Guaíra|SP": "106143774",
+  "Guaíra|PR": "101993723",
+  "Brasil": "106057199"
+ }
+}
